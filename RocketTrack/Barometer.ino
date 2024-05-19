@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
+#include <Adafruit_BMP085_U.h>
 
 #include "GpsOnePPS.h"
 
@@ -23,6 +24,7 @@ int last_baro_time=0;
 #define SEALEVELPRESSURE_HPA (1013.25)
 
 Adafruit_BME280 bme;
+Adafruit_BMP085_Unified bmp=Adafruit_BMP085_Unified(10085);
 
 float baro_temp=0.0f;
 float baro_pressure=0.0f;
@@ -33,20 +35,48 @@ float max_baro_height=0.0f;
 
 int SetupBarometer(void)
 {
-	if(!bme.begin(BME_ADDRESS))
+	if(strstr(baro_type,"None")!=NULL)
 	{
-		Serial.println("BME280 barometer not found, disabling");
+		Serial.println("No barometer configured, disabling");
+		baro_enable=0;	
+	}
+	else if(strstr(baro_type,"BME280")!=NULL)
+	{
+		if(!bme.begin(BME_ADDRESS))
+		{
+			Serial.println("BME280 barometer not found, disabling");
+			baro_enable=0;
+			
+			return(1);
+		}	
+	}
+	else if(strstr(baro_type,"BMP180")!=NULL)
+	{
+		/* Initialise the sensor */
+		if(!bmp.begin())
+		{
+			/* There was a problem detecting the BMP085 ... check your connections */
+			Serial.print("Ooops, no BMP085 detected ... Check your wiring or I2C ADDR!");
+			baro_enable=0;
+		}
+		else
+		{
+			/* Display some basic information on this sensor */
+			displayBaroSensorDetails();
+		}
+	}
+	else
+	{
+		Serial.println("No barometer configured, disabling");
 		baro_enable=0;
-		
-		return(1);
-	}	
+	}
 	
 	if(baro_rate!=0)
 		baro_period=1000/baro_rate;
 	
 	Serial.printf("Baro period = %d\r\n",baro_period);
 	
-	Serial.print("BME280 barometer configured\r\n");
+	Serial.print("Barometer configured\r\n");
 
 	last_baro_time=millis_1pps();
 	
@@ -76,6 +106,8 @@ void PollBarometer(void)
 	}
 }
 
+
+
 void SampleBarometer(void)
 {
 #if DEBUG>2
@@ -104,6 +136,56 @@ void SampleBarometer(void)
 	}
 }
 
+float ReadAltitude(void)
+{
+	if(strstr(baro_type,"BME280")!=NULL)
+		return(bme.readAltitude(SEALEVELPRESSURE_HPA));
+
+	if(strstr(baro_type,"BMP180")!=NULL)
+	{
+		float pressure;
+		bmp.getPressure(&pressure);
+		return(bmp.pressureToAltitude(SENSORS_PRESSURE_SEALEVELHPA,pressure/100.0F));
+	}
+}
+
+float ReadPressure(void)
+{
+	if(strstr(baro_type,"BME280")!=NULL)
+		return(bme.readPressure());
+
+	if(strstr(baro_type,"BMP180")!=NULL)
+	{
+		float pressure;
+		bmp.getPressure(&pressure);
+		return(pressure);
+	}
+}
+
+float ReadTemperature(void)
+{
+	if(strstr(baro_type,"BME280")!=NULL)
+		return(bme.readTemperature());
+	
+	if(strstr(baro_type,"BMP180")!=NULL)
+	{
+		float temperature;
+		bmp.getTemperature(&temperature);
+		return(temperature);
+	}
+}
+
+float ReadHumidity(void)
+{
+	if(strstr(baro_type,"BME280")!=NULL)
+		return(bme.readHumidity());
+	
+	if(strstr(baro_type,"BMP180")!=NULL)
+	{
+		return(0.0F);
+	}
+}
+
 int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 {
 	// ignore a single key stroke
@@ -118,22 +200,22 @@ int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 	switch(cmd[1]|0x20)
 	{
-		case 'a':	Serial.print("Altitude: ");		Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA));	Serial.print(" m\r\n");
+		case 'a':	Serial.print("Altitude: ");		Serial.print(ReadAltitude());		Serial.print(" m\r\n");
 					break;
 					
-		case 'p':	Serial.print("Pressure: ");		Serial.print(bme.readPressure()/100.0F);				Serial.print(" hPa\r\n");
+		case 'p':	Serial.print("Pressure: ");		Serial.print(ReadPressure());		Serial.print(" Pa\r\n");
 					break;
 
-		case 't':	Serial.print("Temperature: ");	Serial.print(bme.readTemperature());					Serial.print(" *C\r\n");
+		case 't':	Serial.print("Temperature: ");	Serial.print(ReadTemperature());	Serial.print(" *C\r\n");
 					break;
 		
-		case 'h':	Serial.print("Humidity = ");	Serial.print(bme.readHumidity());						Serial.print(" %\r\n");
+		case 'h':	Serial.print("Humidity: ");		Serial.print(ReadHumidity());		Serial.print(" %\r\n");
 					break;
 		
-		case 'r':	Serial.print("Altitude: ");		Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA));	Serial.print(" m\r\n");
-					Serial.print("Pressure: ");		Serial.print(bme.readPressure()/100.0F);				Serial.print(" hPa\r\n");
-					Serial.print("Temperature: ");	Serial.print(bme.readTemperature());					Serial.print(" *C\r\n");
-					Serial.print("Humidity = ");	Serial.print(bme.readHumidity());						Serial.print(" %\r\n");
+		case 'r':	Serial.print("Altitude: ");		Serial.print(ReadAltitude());		Serial.print(" m\r\n");
+					Serial.print("Pressure: ");		Serial.print(ReadPressure());		Serial.print(" Pa\r\n");
+					Serial.print("Temperature: ");	Serial.print(ReadTemperature());	Serial.print(" *C\r\n");
+					Serial.print("Humidity: ");		Serial.print(ReadHumidity());		Serial.print(" %\r\n");
 					break;
 		
 		case '?':	Serial.print("Barometer Test Harness\r\n================\r\n\n");
@@ -150,5 +232,23 @@ int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	}
 	
 	return(retval);
+}
+
+void displayBaroSensorDetails(void)
+{
+	sensor_t sensor;
+	bmp.getSensor(&sensor);
+	
+	Serial.println("------------------------------------");
+	Serial.print  ("Sensor:       "); Serial.println(sensor.name);
+	Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);
+	Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
+	Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" hPa");
+	Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" hPa");
+	Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" hPa");  
+	Serial.println("------------------------------------");
+	Serial.println("");
+	
+	delay(500);
 }
 

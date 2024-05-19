@@ -51,6 +51,7 @@ to be done
 #include "Gyro.h"
 #include "Leds.h"
 #include "Logging.h"
+#include "Magnetometer.h"
 #include "Neopixels.h"
 #include "SDCard.h"
 #include "SpiffsSupport.h"
@@ -78,21 +79,16 @@ void setup()
 
 	// mandatory peripherals
 
-//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
-//#endif
+#endif
 	
 	// SD card is optional but if present, modes of operation are configured
 	// from a file rather than just compiled-in defaults.  It will also use
 	// a more elaborate web page too
 	
 	if(SetupSDCard())			{	Serial.println("SD Card Setup failed, disabling ...\r\n");					sdcard_enable=0;		}
-
-//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupSPIFFS())			{	Serial.println("SPIFFS Setup failed, disabling ...\r\n");					spiffs_enable=0;		}
-//#else
-//	spiffs_enable=0;
-//#endif
 		
 	ReadConfigFile();
 
@@ -116,31 +112,34 @@ void setup()
 #endif
 
 	if(SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");				acc_enable=0;			}
+	if(SetupMagnetometer())		{	Serial.println("Magnetometer setup failed, disabling ...");					mag_enable=0;			}
 	if(SetupGyro())				{	Serial.println("Gyro setup failed, disabling ...");							gyro_enable=0;			}
 	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
 
+#if 0
 	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 	SetupOnePPS();
 	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
-#if 1
-	Serial.println(crypto_key_hex);
-	DumpHexPacket(crypto_key,32);
-#endif
+	#if 1
+		Serial.println(crypto_key_hex);
+		DumpHexPacket(crypto_key,32);
+	#endif
 	
 	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
 
 	// optional peripherals
 	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=0;			}
 
-#if 0
-	// optional peripherals	
-	if(SetupBeeper())			{	Serial.println("Beeper Setup failed, disabling ...\r\n");					beeper_enable=0;		}
-	if(SetupNeopixels())		{	Serial.println("Neopixels Setup failed, disabling ...\r\n");				neopixels_enable=0;		}
-#endif
-#if 0
-	if(SetupTimers())			{	Serial.println("Timer Setup failed, falling back to software timing ...");	timer_enable=0;			}
+	#if 0
+		// optional peripherals	
+		if(SetupBeeper())			{	Serial.println("Beeper Setup failed, disabling ...\r\n");					beeper_enable=0;		}
+		if(SetupNeopixels())		{	Serial.println("Neopixels Setup failed, disabling ...\r\n");				neopixels_enable=0;		}
+	#endif
+	#if 0
+		if(SetupTimers())			{	Serial.println("Timer Setup failed, falling back to software timing ...");	timer_enable=0;			}
+		#endif
 #endif
 }
 
@@ -148,21 +147,27 @@ int counter=0;
 
 void loop()
 {
-	PollPMIC();
 	PollSerial();
+	PollLEDs();
+
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+	PollPMIC();
+#endif
+#if 0
 	PollGPS();
 	PollOnePPS();
 	PollLoRa();
-	PollLEDs();
+#endif
+#if 0
 	PollDisplay();
 	PollScheduler();
-	
+#endif
 #if 0
 	PollAccelerometer();
+	PollMagnetometer();
 	PollGyro();
-#endif
-	
 	PollBarometer();
+#endif
 }
 
 void PollSerial(void)

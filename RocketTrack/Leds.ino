@@ -13,7 +13,8 @@ int SetupLEDs(void)
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
 	ControlLED(AXP20X_LED_OFF);
 #else
-	digitalWrite(LED_PIN,LED_OFF);
+	if(LED_PIN>=0)
+		digitalWrite(LED_PIN,LED_OFF);
 #endif
 	
 	LedPattern=0xffffffff;
@@ -33,8 +34,8 @@ void PollLEDs(void)
 			if(LedPattern&0x8000000)	ControlLED(AXP20X_LED_LOW_LEVEL);
 			else						ControlLED(AXP20X_LED_OFF);
 #else
-			if(LedPattern&0x8000000)	digitalWrite(LED_PIN,LED_ON);
-			else						digitalWrite(LED_PIN,LED_OFF);
+			if(LedPattern&0x8000000)	if(LED_PIN>=0)	digitalWrite(LED_PIN,LED_ON);
+			else						if(LED_PIN>=0)	digitalWrite(LED_PIN,LED_OFF);
 #endif
 						
 			if(LedRepeatCount>0)

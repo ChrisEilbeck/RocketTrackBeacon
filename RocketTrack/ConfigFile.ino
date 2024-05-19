@@ -1,5 +1,5 @@
 
-#define DEBUGCONFIG 0
+#define DEBUGCONFIG 1
   
 #include "Accelerometer.h"
 #include "Barometer.h"

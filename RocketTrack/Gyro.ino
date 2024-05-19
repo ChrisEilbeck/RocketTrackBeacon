@@ -2,6 +2,8 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
+
+
 int gyro_enable=1;
 
 char gyro_type[32]="None";
@@ -34,19 +36,12 @@ int SetupGyro(void)
 		gyro_type_no=GYRO_MPU6050;
 		gyro_enable=1;
 	}
-	else if(strstr(gyro_type,"MPU9250")!=NULL)
+	else if(strstr(gyro_type,"L3GD20")!=NULL)
 	{
 	
 	
 	
-	
-	
-	
-	
-	
-		Serial.print("MPU6050 gyro configured\r\n");
-		gyro_type_no=GYRO_MPU6050;
-		gyro_enable=1;
+		gyro_enable=0;
 	}
 	else
 	{

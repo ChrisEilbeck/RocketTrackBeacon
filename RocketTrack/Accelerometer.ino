@@ -36,16 +36,10 @@ int SetupAccelerometer(void)
 		acc_type_no=ACCELEROMETER_MPU6050;
 		acc_enable=1;
 	}
-	else if(strstr(acc_type,"MPU9250")!=NULL)
+	else if(strstr(acc_type,"LSM303DLHC")!=NULL)
 	{
-		
-		
-		
-		
-		
-		Serial.print("MPU9250 accelerometer configured\r\n");
-		acc_type_no=ACCELEROMETER_MPU9250;
-		acc_enable=1;
+	
+	
 	}
 	else if(strstr(acc_type,"ADXL345")!=NULL)
 	{
