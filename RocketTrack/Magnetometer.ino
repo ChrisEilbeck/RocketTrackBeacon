@@ -1,23 +1,18 @@
 
-
-
-
-
-
-
-
-
 #include <Adafruit_LSM303DLH_Mag.h>
 #include <Adafruit_Sensor.h>
 
 /* Assign a unique ID to this sensor at the same time */
-Adafruit_LSM303DLH_Mag_Unified mag = Adafruit_LSM303DLH_Mag_Unified(12345);
+Adafruit_LSM303DLH_Mag_Unified mag=Adafruit_LSM303DLH_Mag_Unified(10003);
 
 int mag_enable=1;
 
 char mag_type[32]="Generic";
+int mag_type_no=MAGNETOMETER_NONE;
 
-int mag_rate=200;
+int mag_period=100;
+int last_mag_time=0;
+int mag_rate=10;
 
 int SetupMagnetometer(void)
 {
@@ -34,16 +29,17 @@ int SetupMagnetometer(void)
 		// Initialise the sensor
 		if(!mag.begin())
 		{
-			// There was a problem detecting the LSM303 ... check your connections
-			Serial.println("Ooops, no LSM303 detected ... Check your wiring!");
-			while (1)
-			{
-				;
-			}
+			Serial.println("Ooops, no LSM303DLHC detected ... Check your wiring!");
+			mag_enable=0;
+			return(1);
 		}
+
+		Serial.println("LSM303DLCH magnetomere configured");
+
+		DisplayMagnetometerDetails();
 		
-		// Display some basic information on this sensor
-		displaySensorDetails();
+		mag_type_no=MAGNETOMETER_LSM303DLHC;
+		mag_enable=1;
 	}
 	else
 	{
@@ -56,11 +52,34 @@ int SetupMagnetometer(void)
 
 void PollMagnetometer(void)
 {
-
+	if(mag_enable)
+	{
+		if(millis()>(last_mag_time+mag_period))
+		{
+			SampleMagnetometer();
+			last_mag_time=millis();
+		}
+	}
 }
 
+void SampleMagnetometer(void)
+{
+	sensors_event_t event;
+	mag.getEvent(&event);
 
-void displaySensorDetails(void)
+	Serial.print("X: ");
+	Serial.print(event.magnetic.x);
+	Serial.print("  ");
+	Serial.print("Y: ");
+	Serial.print(event.magnetic.y);
+	Serial.print("  ");
+	Serial.print("Z: ");
+	Serial.print(event.magnetic.z);
+	Serial.print("  ");
+	Serial.println("uT");
+}
+
+void DisplayMagnetometerDetails(void)
 {
 	sensor_t sensor;
 	mag.getSensor(&sensor);
@@ -83,6 +102,5 @@ void displaySensorDetails(void)
 	Serial.println(" uT");
 	Serial.println("------------------------------------");
 	Serial.println("");
-	
-	delay(500);
 }
+

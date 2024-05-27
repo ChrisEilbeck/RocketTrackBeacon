@@ -2,6 +2,33 @@
 #include "GPS.h"
 #include "Packetisation.h"
 
+bool gps_enabled=true;
+int gps_type_num=GPS_NMEA;
+
+// pick up the right serial port to use depending on which board we're running on
+
+#if ARDUINO_TBEAM_USE_RADIO_SX1276
+
+	#define GPSSerialPort Serial1
+	
+#elif ARDUINO_TTGO_LoRa32_v21new
+
+	#include <SoftwareSerial.h>
+	EspSoftwareSerial::UART GPSSerialPort;
+	
+	#include "MTK_GPS.h"
+	MTK_GPS gps(GPSSerialPort);
+
+#elif BOARD_FEATHER
+	
+	#define GPSSerialPort NULL // for now
+	
+#else
+	
+	#define GPSSerialPort NULL
+	
+#endif
+
 // to be set from the config file
 
 char gps_type[32];
@@ -73,6 +100,7 @@ uint8_t beaconhour;
 uint8_t beaconmin;
 uint8_t beaconsec;
 
+#if 0
 void CalculateChecksum(uint8_t *buffer,uint16_t bufferptr,uint8_t *CK_A,uint8_t *CK_B)
 {
 	uint16_t cnt;
@@ -201,9 +229,8 @@ void Set5Hz_Fix_Rate()
 	FixUBXChecksum(cmd,sizeof(cmd));
 	SendUBX(cmd,sizeof(cmd));
 }
+#endif
 
-
-#if 1
 int SetupGPS(void)
 {
 	Serial.println("Open GPS port");
@@ -211,145 +238,96 @@ int SetupGPS(void)
 	// this could do with some autobauding
 	
 	
-	Serial1.begin(9600,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
 
 	// this also assumes we're using a u-Blox receiver, not always true
 
-#if BINARY_GPS	
-	#warning "this only support a u-Blox GPS receiver"
 
-#if 1
-	// turn off all NMEA output	
-	SetMessageRate(0xf0,0x00,0x00);	// GPGGA
-	SetMessageRate(0xf0,0x01,0x00);	// GPGLL
-	SetMessageRate(0xf0,0x02,0x00);	// GPGSA
-	SetMessageRate(0xf0,0x03,0x00);	// GPGSV
-	SetMessageRate(0xf0,0x04,0x00);	// GPRMC
-	SetMessageRate(0xf0,0x05,0x00);	// GPVTG
-#endif	
-#if 1
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x05);	// NAV-STATUS every fifth fix
-	SetMessageRate(0x01,0x30,0x05);	// NAV-SVINFO every fifth fix
-	SetMessageRate(0x01,0x21,0x05);	// NAV-TIMEUTC every fifth fix
-	Set5Hz_Fix_Rate();
+
+#if ARDUINO_TBEAM_USE_RADIO_SX1276
+	// Pins for T-Beam v0.8 (3 push buttons) and up
+	GPSSerialPort.begin(initial_baud,SERIAL_8N1,34,12);
+#elif ARDUINO_TTGO_LoRa32_v21new
+	GPSSerialPort.begin(initial_baud,EspSoftwareSerial::SWSERIAL_8N1,GPS_RXD,GPS_TXD,false,95,11);
+#elif BOARD_FEATHER
+	Serial.println("GPS support not present for the Feather board yet, aborting ...");
+	return(1);
 #else
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
+	Serial.println("GPS misconfigured, aborting ...");
+	return(1);
 #endif
+#if 0
+	Serial.print("\nPassing through the GPS for 10 seconds ...\r\n\n");
+
+	int start=millis();
+	
+	while(millis()<(start+10000))
+	{
+		while(GPSSerialPort.available()>0)
+		{
+			Serial.write(GPSSerialPort.read());
+		}
+	}
+
+	Serial.print("\r\n\nDisabling GPS passthrough\r\n\n");
 #endif
 	
+	if(strstr("NMEA",gps_type)!=NULL)			{	gps_type_num=GPS_NMEA;		}
+	else if(strstr("UBLOX",gps_type)!=NULL)		{	gps_type_num=GPS_UBLOX;		}
+	else if(strstr("ublox",gps_type)!=NULL)		{	gps_type_num=GPS_UBLOX;		}
+	else if(strstr("MTK333X",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("mtk333x",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("MTK3333",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("mtk3333",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("MTK3339",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("mtk3339",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else										{	gps_enabled=false;			}
+	
+	SetupGPSMessages();
+
 	return(0);
 }
-#else
-int SetupGPS(void)
+
+void SetupGPSMessages(void)
 {
+	switch(gps_type_num)
+	{
+		case GPS_UBLOX:		Serial.println("\tUBLOX GPS Receiver selected\n");
 #if 0
-	// Switch GPS on,if we have control of that
-	pinMode(GPS_ON,OUTPUT);
-	digitalWrite(GPS_ON,1);
-#endif
-	
-#if (DEBUG>0)
-	Serial.println("Open GPS port");
-#endif
+							// turn off all NMEA output	
+							SetMessageRate(0xf0,0x00,0x00);	// GPGGA
+							SetMessageRate(0xf0,0x01,0x00);	// GPGLL
+							SetMessageRate(0xf0,0x02,0x00);	// GPGSA
+							SetMessageRate(0xf0,0x03,0x00);	// GPGSV
+							SetMessageRate(0xf0,0x04,0x00);	// GPRMC
+							SetMessageRate(0xf0,0x05,0x00);	// GPVTG
+							
+							// change the baud rate and re-open the
+							// serial port to match
+							ChangeBaudRate(115200);
+							GPSSerialPort.flush();
+							GPSSerialPort.end();
+							Serial1.begin(115200,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
 
-	Serial1.begin(9600,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
+							// setup the messages we want
+							SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
+							SetMessageRate(0x01,0x03,0x05);	// NAV-STATUS every fifth fix
+							SetMessageRate(0x01,0x30,0x05);	// NAV-SVINFO every fifth fix
+							SetMessageRate(0x01,0x21,0x05);	// NAV-TIMEUTC every fifth fix
+							
+							Set5Hz_Fix_Rate();
+#endif						
+							break;
+						
+		case GPS_MTK333x:	Serial.println("\tMTX333X GPS Receiver selected\n");	
+		
+							break;
 	
-	
-	
-	
-	
-	
-	
-#if 0
-	// the gps will start at 9600 baud.  we need to change it to 115200, switch a load 
-	// of messages off, enable some ubx messages then change the measurement rate to 
-	// every 200ms
-	
-#ifdef ARDUINO_TBeam
-	Serial1.begin(9600,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
-
-  #if 1
-	ChangeBaudRate(115200);
-	
-	Serial1.flush();
-	Serial1.end();
-	
-	Serial1.begin(115200,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
-  #endif	
-#else
-	Serial1.begin(38400);
-#endif
-
-	delay(500);
-	
-  #if 0
-	Set5Hz_Fix_Rate();
-  #endif
-
-  #if 0
-	SetMessageRate(0xf0,0x00,0x01);	// GPGGA
-	SetMessageRate(0xf0,0x01,0x01);	// GPGLL
-	SetMessageRate(0xf0,0x02,0x05);	// GPGSA
-	SetMessageRate(0xf0,0x03,0x05);	// GPGSV
-	SetMessageRate(0xf0,0x04,0x01);	// GPRMC
-	SetMessageRate(0xf0,0x05,0x01);	// GPVTG
-  #else	
-	// turn off all NMEA output	
-	SetMessageRate(0xf0,0x00,0x00);	// GPGGA
-	SetMessageRate(0xf0,0x01,0x00);	// GPGLL
-	SetMessageRate(0xf0,0x02,0x00);	// GPGSA
-	SetMessageRate(0xf0,0x03,0x00);	// GPGSV
-	SetMessageRate(0xf0,0x04,0x00);	// GPRMC
-	SetMessageRate(0xf0,0x05,0x00);	// GPVTG
-  #endif	
-	
-  #if 0
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
-  #endif	
-
-	delay(100);
-  #if 1
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
-  #endif	
-
-  #if 0
-	// turn on the useful UBX messages
-	
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-
-    #if 0
-	SetMessageRate(0x01,0x03,0x05);	// NAV-STATUS every 5th fix
-	SetMessageRate(0x01,0x30,0x05);	// NAV-SVINFO every 5th fix
-    #else
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
-    #endif
-
-    #if 0
-	EnableRawMeasurements();
-    #endif
-	
-    #if 0
-	SetMessageRate(0x02,0x10,0x05);	// RXM-RAW every 5th fix
-    #else
-	SetMessageRate(0x02,0x10,0x00);	// RXM-RAW off
-    #endif
-  #endif
-	
-#else
-	Serial1.begin(9600,SERIAL_8N1,12,15);	// For version 0.7 (2 push buttons) and down
-#endif
-	
-	return(0);
+		default:			// assume this is just a generic GPS and leave the
+							// messages it output as is.
+							Serial.println("\tConfiguring as a standard GPS, no custom messages selected");
+							break;
+	}
 }
-#endif
 
 void PollGPS(void)
 {
@@ -359,12 +337,12 @@ void PollGPS(void)
 	static uint8_t lastbyte=0x00;
 	
 #if GPS_PASSTHROUGH
-	if(Serial1.available())	{	rxbyte=Serial1.read();	Serial.write(rxbyte);	}
-	if(Serial.available())	{	rxbyte=Serial.read();	Serial1.write(rxbyte);	}
+	if(GPSSerialPort.available())	{	rxbyte=GPSSerialPort.read();	Serial.write(rxbyte);			}
+	if(Serial.available())			{	rxbyte=Serial.read();			GPSSerialPort.write(rxbyte);	}
 #else
-	while(Serial1.available())
+	while(GPSSerialPort.available())
 	{
-		rxbyte=Serial1.read();
+		rxbyte=GPSSerialPort.read();
 		
 		if(gps_live_mode)
 			Serial.write(rxbyte);

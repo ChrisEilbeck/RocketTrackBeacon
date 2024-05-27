@@ -1,6 +1,7 @@
 
-bool leds_enable=true;
-uint32_t NextLEDs=0;
+int leds_enable=1;
+int NextLEDs=0;
+int led_period=100;
 
 uint32_t LedPattern=0;
 uint16_t LedRepeatCount=0;
@@ -14,11 +15,14 @@ int SetupLEDs(void)
 	ControlLED(AXP20X_LED_OFF);
 #else
 	if(LED_PIN>=0)
+	{
+		pinMode(LED_PIN,OUTPUT);
 		digitalWrite(LED_PIN,LED_OFF);
+	}
 #endif
 	
-	LedPattern=0xffffffff;
-	LedRepeatCount=2;
+	LedPattern=0;
+	LedRepeatCount=0;
 	LedBitCount=0;					
 
 	return(0);
@@ -30,22 +34,21 @@ void PollLEDs(void)
 	{
 		if(millis()>=NextLEDs)
 		{
+//			Serial.println(".");
+		
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
-			if(LedPattern&0x8000000)	ControlLED(AXP20X_LED_LOW_LEVEL);
-			else						ControlLED(AXP20X_LED_OFF);
+			if(LedPattern&0x8000000)		ControlLED(AXP20X_LED_LOW_LEVEL);
+			else							ControlLED(AXP20X_LED_OFF);
 #else
-			if(LedPattern&0x8000000)	if(LED_PIN>=0)	digitalWrite(LED_PIN,LED_ON);
-			else						if(LED_PIN>=0)	digitalWrite(LED_PIN,LED_OFF);
+			if(LED_PIN>=0)
+			{
+				if(LedPattern&0x8000000)	digitalWrite(LED_PIN,LED_ON);
+				else						digitalWrite(LED_PIN,LED_OFF);
+			}
 #endif
 						
-			if(LedRepeatCount>0)
-			{
-				LedPattern=(LedPattern<<1)|(LedPattern>>31);
-			}
-			else
-			{
-				LedPattern=(LedPattern<<1);
-			}
+			if(LedRepeatCount>0)			LedPattern=(LedPattern<<1)|(LedPattern>>31);
+			else							LedPattern=(LedPattern<<1);
 			
 			LedBitCount++;
 			if(LedBitCount>=32)
@@ -55,7 +58,7 @@ void PollLEDs(void)
 			}
 			
 			// run the leds on a Hz cycle
-			NextLEDs=millis()+200L;
+			NextLEDs=millis()+led_period;
 		}
 	}
 }
@@ -75,7 +78,7 @@ int LEDCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	{
 		case 't':	Serial.print("Triggering LED Test pattern\r\n");
 					LedPattern=0b11101110111000111010111;
-					LedRepeatCount=3;
+					LedRepeatCount=1;
 					LedBitCount=0;
 					break;
 		

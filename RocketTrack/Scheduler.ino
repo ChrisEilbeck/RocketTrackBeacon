@@ -3,6 +3,9 @@ uint32_t next_transmit=0;
 
 int SetupScheduler(void)
 {
+	if(USER_BUTTON<0)
+		return(0);
+
 	pinMode(USER_BUTTON,INPUT);
 	if(digitalRead(USER_BUTTON)==0)
 		lora_constant_transmit=true;
@@ -15,6 +18,9 @@ int button_timer=0;
 
 void PollScheduler(void)
 {
+	if(USER_BUTTON<0)
+		return;
+
 	bool user_button=digitalRead(USER_BUTTON);
 	
 	if(!user_button&&last_user_button)

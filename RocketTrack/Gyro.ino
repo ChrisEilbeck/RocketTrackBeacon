@@ -1,17 +1,18 @@
 
+#include <Adafruit_L3GD20_U.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
-
-
 
 int gyro_enable=1;
 
 char gyro_type[32]="None";
 int gyro_type_no=0;
-
-int gyro_rate=200;
+int last_gyro_time=0;
+int gyro_period=100;
+int gyro_rate=10;
 
 extern Adafruit_MPU6050 mpu;
+Adafruit_L3GD20_Unified gyro=Adafruit_L3GD20_Unified(10002);
 
 int SetupGyro(void)
 {
@@ -32,16 +33,28 @@ int SetupGyro(void)
 		mpu.setGyroRange(MPU6050_RANGE_500_DEG);
 		mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 		
-		Serial.print("MPU6050 gyro configured\r\n");
+		Serial.println("MPU6050 gyro configured\r\n");
+		
 		gyro_type_no=GYRO_MPU6050;
 		gyro_enable=1;
 	}
 	else if(strstr(gyro_type,"L3GD20")!=NULL)
 	{
+		gyro.enableAutoRange(true);
 	
+		if(!gyro.begin())
+		{
+			Serial.println("L3GD20 not detected, disabling");		
+			gyro_enable=0;
+			return(1);
+		}	
 	
-	
-		gyro_enable=0;
+		Serial.println("L3GD20 gyro configured");
+		
+		DisplayGyroDetails();
+		
+		gyro_type_no=GYRO_L3GD20;
+		gyro_enable=1;
 	}
 	else
 	{
@@ -56,10 +69,26 @@ void PollGyro(void)
 {
 	if(gyro_enable)
 	{
-		sensors_event_t a,g,temp;
-		mpu.getEvent(&a,&g,&temp);
-		Serial.print("Rotation X: ");		Serial.print(g.gyro.x);			Serial.print(", Y: ");	Serial.print(g.gyro.y);			Serial.print(", Z: ");	Serial.print(g.gyro.z);			Serial.print(" rad/s\t");
+		if(millis()>(last_gyro_time+gyro_period))
+		{
+			SampleGyro();
+			last_gyro_time=millis();
+		}
 	}
+}
+
+void SampleGyro(void)
+{
+	sensors_event_t g;
+	gyro.getEvent(&g);
+	
+	Serial.print("Rotation X: ");
+	Serial.print(g.gyro.x);
+	Serial.print(", Y: ");
+	Serial.print(g.gyro.y);
+	Serial.print(", Z: ");
+	Serial.print(g.gyro.z);
+	Serial.println(" rad/s\t");
 }
 
 int GyroCommandHandler(uint8_t *cmd,uint16_t cmdptr)
@@ -96,5 +125,21 @@ int GyroCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	}
 	
 	return(retval);
+}
+
+void DisplayGyroDetails(void)
+{
+	sensor_t sensor;
+	gyro.getSensor(&sensor);
+
+	Serial.println("------------------------------------");
+	Serial.print  ("Sensor:       "); Serial.println(sensor.name);
+	Serial.print  ("Driver Ver:   "); Serial.println(sensor.version);
+	Serial.print  ("Unique ID:    "); Serial.println(sensor.sensor_id);
+	Serial.print  ("Max Value:    "); Serial.print(sensor.max_value); Serial.println(" rad/s");
+	Serial.print  ("Min Value:    "); Serial.print(sensor.min_value); Serial.println(" rad/s");
+	Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" rad/s");  
+	Serial.println("------------------------------------");
+	Serial.println("");
 }
 

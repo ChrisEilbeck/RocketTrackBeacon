@@ -15,6 +15,7 @@ void PMIC_Interrupt(void)
 
 int SetupPMIC(void)
 {
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	Serial.print("AXP192 Init");
 	if(!axp.begin(Wire, AXP192_SLAVE_ADDRESS))	{	Serial.println(" PASS\r\n");	} 
 	else                                        {	Serial.println(" FAIL\r\n");	}
@@ -45,12 +46,14 @@ int SetupPMIC(void)
 
     //! enable all irq channel
     axp.enableIRQ(AXP202_ALL_IRQ, true);
-	
+#endif
+		
 	return(0);
 }
 
 void PollPMIC(void)
 {
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	static uint32_t updateat=0;
 	
 	if(PMIC_semaphore)
@@ -79,10 +82,14 @@ void PollPMIC(void)
 		
 		updateat=millis()+1000L;
 	}
+#endif
 }
 
 int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 {
+	int retval=1;
+
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	// ignore a single key stroke
 	if(cmdptr<=2)	return(0);
 
@@ -90,7 +97,6 @@ int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	Serial.println((char *)cmd);
 #endif
 	
-	int retval=1;
 	float batteryvoltage=axp.getBattVoltage();
 	float batterychargecurrent=axp.getBattChargeCurrent();
 	
@@ -121,12 +127,14 @@ int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 		default:	// ignore
 					break;
 	}
-	
+#endif
+		
 	return(retval);
 }
 
 void ControlLED(axp_chgled_mode_t Mode)
 {
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 //	Serial.print("ControlLED() entry\r\n");
 	
 	static axp_chgled_mode_t OldMode=AXP20X_LED_OFF;
@@ -138,5 +146,6 @@ void ControlLED(axp_chgled_mode_t Mode)
 	}
 	
 //	Serial.print("ControlLED() exit\r\n");
+#endif
 }
 

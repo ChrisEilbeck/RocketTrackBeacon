@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERBOSE=--verbose
+##VERBOSE=--verbose
 
 ##BOARD=esp32:esp32:t-beam:Revision=Radio_SX1276
 BOARD=esp32:esp32:ttgo-lora32:Revision=TTGO_LoRa32_v21new
