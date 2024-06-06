@@ -1,5 +1,5 @@
 
-#define DEBUGCONFIG 1
+#define DEBUGCONFIG 0
   
 #include "Accelerometer.h"
 #include "Barometer.h"
@@ -41,6 +41,8 @@ typedef struct
 
 configvalue_t config[]={
 	{	"Tracker",			"Autostart",		(void *)&lora_constant_transmit,	CFGINTEGER,		"0"					},
+	{	"Tracker",			"Mode",				(void *)&tracker_mode,				CFGSTRING,		"TX"				},
+	{	"Tracker",			"SyncSensorsToGPS",	(void *)&sync_sampling,				CFGINTEGER,		"1"					},
 	{	"Crypto",			"Enable",			(void *)&crypto_enable,				CFGINTEGER,		"1"					},
 	{	"Crypto",			"Key",				(void *)crypto_key_hex,				CFGSTRING,		""					},
 	{	"WiFi",				"Enable",			(void *)&wifi_enable,				CFGINTEGER,		"1"					},

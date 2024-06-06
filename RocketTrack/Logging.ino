@@ -4,8 +4,7 @@
 
 int log_level=1;
 
-int logging_enable=1;
-
+bool logging_enable=true;
 
 int SetupLogging(void)
 {
@@ -25,5 +24,3 @@ int LogMessage(char *logmsg)
 
 }
 
-int OpenLogFile(void);
-int LogMessage(char *logmsg);

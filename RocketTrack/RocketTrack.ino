@@ -66,6 +66,9 @@ to be done
 extern char crypto_key_hex[65];
 extern uint8_t crypto_key[32];
 
+char tracker_mode[32];
+int sync_sampling=1;
+
 void PollSerial(void);
 
 void setup()
@@ -93,7 +96,7 @@ void setup()
 	// from a file rather than just compiled-in defaults.  It will also use
 	// a more elaborate web page too
 	
-#if 0
+#if 1
 	if(SetupSDCard())			{	Serial.println("SD Card Setup failed, disabling ...\r\n");					sdcard_enable=0;		}
 #endif
 
@@ -184,11 +187,12 @@ void loop()
 	PollDisplay();
 	PollScheduler();
 #endif
-
+#if 0
 	PollAccelerometer();
 	PollMagnetometer();
 	PollGyro();
 	PollBarometer();
+#endif
 }
 
 void PollSerial(void)

@@ -2,6 +2,15 @@
 #include "GPS.h"
 #include "Packetisation.h"
 
+#include <TinyGPS.h>
+#include <MicroNMEA.h>
+
+//MicroNMEA library structures
+char gpsparserBuffer[100];
+MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
+
+//TinyGPS gpsparser;
+
 bool gps_enabled=true;
 int gps_type_num=GPS_NMEA;
 
@@ -347,6 +356,107 @@ void PollGPS(void)
 		if(gps_live_mode)
 			Serial.write(rxbyte);
 		
+		if(		(gps_type_num==GPS_NMEA)
+			||	(gps_type_num==GPS_MTK333x)	)
+		{
+#if 0
+			if(gpsparser.encode(rxbyte))
+			{
+				float flat, flon;
+				unsigned long age;
+
+				gpsparser.f_get_position(&flat, &flon, &age);
+
+			    Serial.print("LAT=");
+			    Serial.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
+			    Serial.print(" LON=");
+			    Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
+			    Serial.print(" SAT=");
+			    Serial.print(gpsparser.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gpsparser.satellites());
+			    Serial.print(" PREC=");
+			    Serial.print(gpsparser.hdop() == TinyGPS::GPS_INVALID_HDOP ? 0 : gpsparser.hdop());
+			}
+
+	#if 0			
+			unsigned long chars;
+			unsigned short sentences, failed;
+
+			gpsparser.stats(&chars, &sentences, &failed);
+			 
+			Serial.print(" CHARS=");
+			Serial.print(chars);
+			Serial.print(" SENTENCES=");
+			Serial.print(sentences);
+			Serial.print(" CSUM ERR=");
+			Serial.println(failed);	
+	#endif
+#endif
+#if 1
+			if(gpsparser.process(rxbyte))
+			{
+//				char msgid[8];
+#if 0
+				if(strncmp(gpsparser.getMessageID(),"RMC",3)==0)
+				{
+			
+			
+			
+				  // Output GPS information from previous second
+				  Serial.print("Valid fix: ");
+				  Serial.println(gpsparser.isValid() ? "yes" : "no");
+
+				  Serial.print("Nav. system: ");
+				  if (gpsparser.getNavSystem())
+					 Serial.println(gpsparser.getNavSystem());
+				  else
+					 Serial.println("none");
+
+				  Serial.print("Num. satellites: ");
+				  Serial.println(gpsparser.getNumSatellites());
+
+				  Serial.print("HDOP: ");
+				  Serial.println(gpsparser.getHDOP()/10., 1);
+
+				  Serial.print("Date/time: ");
+				  Serial.print(gpsparser.getYear());
+				  Serial.print('-');
+				  Serial.print(int(gpsparser.getMonth()));
+				  Serial.print('-');
+				  Serial.print(int(gpsparser.getDay()));
+				  Serial.print('T');
+				  Serial.print(int(gpsparser.getHour()));
+				  Serial.print(':');
+				  Serial.print(int(gpsparser.getMinute()));
+				  Serial.print(':');
+				  Serial.println(int(gpsparser.getSecond()));
+
+				  long latitude_mdeg = gpsparser.getLatitude();
+				  long longitude_mdeg = gpsparser.getLongitude();
+				  Serial.print("Latitude (deg): ");
+				  Serial.println(latitude_mdeg / 1000000., 6);
+
+				  Serial.print("Longitude (deg): ");
+				  Serial.println(longitude_mdeg / 1000000., 6);
+
+				  long alt;
+				  Serial.print("Altitude (m): ");
+				  if (gpsparser.getAltitude(alt))
+					 Serial.println(alt / 1000., 3);
+				  else
+					 Serial.println("not available");
+
+				  Serial.print("Speed: ");
+				  Serial.println(gpsparser.getSpeed() / 1000., 3);
+				  Serial.print("Course: ");
+				  Serial.println(gpsparser.getCourse() / 1000., 3);
+
+				  Serial.println("-----------------------");
+				  }
+	#endif
+			   }
+#endif		
+		}
+	#if 0
 		if((lastbyte==0xb5)&&(rxbyte==0x62))
 		{
 			ProcessUBX(buffer,bufferptr);
@@ -388,6 +498,8 @@ void PollGPS(void)
 				// ignore the bytes
 			}
 		}
+		
+	#endif	
 		
 		lastbyte=rxbyte;
 	}

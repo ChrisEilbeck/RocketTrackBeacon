@@ -45,17 +45,17 @@
 	#define LORA_RESET		23
 	#define LORA_DIO0		26
 	
-//	#define SDCARD_NSS		13
-//	#define SDCARD_MISO		2
-//	#define SDCARD_MOSI		15
-//	#define SDCARD_CLK		14
+	#define SDCARD_NSS		13
+	#define SDCARD_MISO		2
+	#define SDCARD_MOSI		15
+	#define SDCARD_CLK		14
 
-	#define SDMMC_CLK		14
-	#define SDMMC_CMD		15
-	#define SDMMC_D0		2
-	#define SDMMC_D1		4
-	#define SDMMC_D2		12
-	#define SDMMC_D3		13
+//	#define SDMMC_CLK		14
+//	#define SDMMC_CMD		15
+//	#define SDMMC_D0		2
+//	#define SDMMC_D1		4
+//	#define SDMMC_D2		12
+//	#define SDMMC_D3		13
 
 	#define SDA				21
 	#define SCL				22

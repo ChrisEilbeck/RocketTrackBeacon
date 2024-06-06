@@ -1,4 +1,6 @@
 
+#include "Logging.h"
+#include "LoRaModule.h"
 #include "Packetisation.h"
 #include "Webserver.h"
 #include "WiFiSupport.h"
@@ -11,7 +13,31 @@ int webserver_enable=1;
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
-// Replaces placeholder with LED state value
+String index_processor(const String& var)
+{
+#if 0
+	Serial.print("Logging: ");	Serial.println(logging_enable?"ACTIVE":"off");
+	Serial.print("Transmit: ");	Serial.println(lora_constant_transmit?"ACTIVE":"off");
+#endif
+		
+	char buffer[256];
+	memset(buffer,0,sizeof(buffer));
+	
+	if(var=="LOGGING_ENABLED")
+	{
+		if(logging_enable)			sprintf(buffer,"ACTIVE");
+		else						sprintf(buffer,"off");
+	}
+	else if(var=="CONSTANT_TRANSMIT")
+	{
+		if(lora_constant_transmit)	sprintf(buffer,"ACTIVE");
+		else						sprintf(buffer,"off");
+	}
+	
+	if(strlen(buffer)>0)			return(buffer);
+	else							return String();
+}
+
 String processor(const String& var)
 {
 //	Serial.println("webserver process entry");
@@ -127,9 +153,37 @@ int SetupWebServer(void)
 		&&	spiffs_enable
 		&&	webserver_enable	)
 	{
-		// Route for root / web page
-		server.on("/",HTTP_GET,[](AsyncWebServerRequest *request)					{														request->redirect("/status.html");		});	
+		// catch anything we're asked for
+		server.onNotFound([](AsyncWebServerRequest *request)						{   request->redirect("/");						});
 		
+		// Route for root / web page
+		server.on("/",HTTP_GET,[](AsyncWebServerRequest *request)					{	request->redirect("/index.html");			});
+
+		server.on("/index.html",HTTP_GET,[](AsyncWebServerRequest *request)			{	request->send(SPIFFS,"/index.html",
+																										String(),false,
+																										index_processor);			});
+		
+		server.on("/index.css",HTTP_GET,[](AsyncWebServerRequest *request)			{	request->send(SPIFFS,"/index.css");			});
+		server.on("/overall.css",HTTP_GET,[](AsyncWebServerRequest *request)		{	request->send(SPIFFS,"/overall.css");		});
+		server.on("/logo.jpg",HTTP_GET,[](AsyncWebServerRequest *request)			{	request->send(SPIFFS,"/logo.jpg");			});
+		server.on("/favicon.ico",HTTP_GET,[](AsyncWebServerRequest *request)		{	request->send(SPIFFS,"/favicon.ico");		});
+		server.on("/includehtml.js",HTTP_GET,[](AsyncWebServerRequest *request)		{	request->send(SPIFFS,"/includehtml.js");	});
+		server.on("/buttons.html",HTTP_GET,[](AsyncWebServerRequest *request)		{	request->send(SPIFFS,"/buttons.html");		});
+
+		server.on("/log_on.html",HTTP_GET,[](AsyncWebServerRequest *request)		{	logging_enable=true;
+																						Serial.println("Setting logging ACTIVE");
+																						request->redirect("/index.html");			});
+		server.on("/log_off.html",HTTP_GET,[](AsyncWebServerRequest *request)		{	logging_enable=false;
+																						Serial.println("Setting logging off");
+																						request->redirect("/index.html");			});
+		server.on("/tx_on.html",HTTP_GET,[](AsyncWebServerRequest *request)			{	lora_constant_transmit=true;
+																						Serial.println("Setting transmit ACTIVE");
+																						request->redirect("/index.html");			});
+		server.on("/tx_off.html",HTTP_GET,[](AsyncWebServerRequest *request)		{	lora_constant_transmit=false;
+																						Serial.println("Setting transmit off");
+																						request->redirect("/index.html");			});
+
+#if 0		
 		server.on("/status.html",HTTP_GET,[](AsyncWebServerRequest *request)		{	Serial.println("Returning /status.html");			request->send(SPIFFS,"/status.html");	});	
 		server.on("/status.css",HTTP_GET,[](AsyncWebServerRequest *request)			{	Serial.println("Returning /status.css");			request->send(SPIFFS,"/status.css");	});	
 		
@@ -176,7 +230,8 @@ int SetupWebServer(void)
 			SetLoRaMode(lora_mode);
 			request->redirect("/engineering.html");
 		});	
-		
+#endif
+				
 		// Start server
 		server.begin();
 		
