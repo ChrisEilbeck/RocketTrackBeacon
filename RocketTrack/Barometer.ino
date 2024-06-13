@@ -6,7 +6,9 @@
 #include <Adafruit_BME280.h>
 #include <Adafruit_BMP085_U.h>
 
+#include "GPS.h"
 #include "GpsOnePPS.h"
+#include "SensorState.h"
 
 bool baro_enable=true;
 
@@ -26,13 +28,6 @@ int last_baro_time=0;
 
 Adafruit_BME280 bme;
 Adafruit_BMP085_Unified bmp=Adafruit_BMP085_Unified(10004);
-
-float baro_temp=0.0f;
-float baro_pressure=0.0f;
-float baro_height=0.0f;
-float baro_humidity=0.0f;
-
-float max_baro_height=0.0f;
 
 int SetupBarometer(void)
 {
@@ -90,60 +85,35 @@ void PollBarometer(void)
 {
 	if(baro_enable)
 	{
-#if 0
-		if(baro_gps_sync)
-		{
-			if(baro_trigger)
-			{
-				SampleBarometer();
-				baro_trigger=false;
-			}
-		}
-		else
-		{
-			if(millis_1pps()>(last_baro_time+baro_period))
-			{
-				SampleBarometer();
-				last_baro_time=millis_1pps();
-			}
-		}
-#else
 		if(millis()>(last_baro_time+baro_period))
 		{
 			SampleBarometer();
 			last_baro_time=millis();
 		}
-
-#endif
+	}
+	else
+	{
+		ss.baro_altitude=0.0f;	ss.baro_pressure=0.0f;	ss.baro_temperature=0.0f;	ss.baro_humidity=0.0f;
 	}
 }
 
 void SampleBarometer(void)
 {
-#if DEBUG>2
-	Serial.println(millis_1pps());
-#endif
+	ss.baro_altitude=ReadAltitude();
+	ss.baro_pressure=ReadPressure();
+	ss.baro_temperature=ReadTemperature();
+	ss.baro_humidity=ReadHumidity();
 
-	baro_temp=ReadTemperature();
-	baro_pressure=ReadPressure();
-	baro_height=ReadAltitude();
-	baro_humidity=ReadHumidity();
+	if(ss.baro_max_altitude<ss.baro_altitude)
+		ss.baro_max_altitude=ss.baro_altitude;
 
-	if(max_baro_height<baro_height)
-		max_baro_height=baro_height;
-
-//#if DEBUG>1
-	Serial.print("Temperature = ");			Serial.print(baro_temp);		Serial.print(" *C\t");
-	Serial.print("Pressure = ");			Serial.print(baro_pressure);	Serial.print(" hPa\t");
-	Serial.print("Approx. Altitude = ");	Serial.print(baro_height);		Serial.print(" m\t");
-	Serial.print("Humidity = ");			Serial.print(baro_humidity);	Serial.print(" %\t");
+#if DEBUG>1
+	Serial.print("Approx. Altitude = ");	Serial.print(ss.baro_altitude);	Serial.print(" m\t");
+	Serial.print("Pressure = ");			Serial.print(ss.baro_pressure);	Serial.print(" hPa\t");
+	Serial.print("Temperature = ");			Serial.print(ss.baro_temp);		Serial.print(" *C\t");
+	Serial.print("Humidity = ");			Serial.print(ss.baro_humidity);	Serial.print(" %\t");
 	Serial.println();
-//#endif
-		
-	if(logging_enable)
-	{
-	
-	}
+#endif
 }
 
 float ReadAltitude(void)
@@ -210,22 +180,27 @@ int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 	switch(cmd[1]|0x20)
 	{
-		case 'a':	Serial.print("Altitude: ");		Serial.print(ReadAltitude());		Serial.print(" m\r\n");
-					break;
-					
-		case 'p':	Serial.print("Pressure: ");		Serial.print(ReadPressure());		Serial.print(" Pa\r\n");
-					break;
-
-		case 't':	Serial.print("Temperature: ");	Serial.print(ReadTemperature());	Serial.print(" *C\r\n");
+		case 'a':	SampleBarometer();
+					Serial.print("Altitude: ");		Serial.print(ss.baro_altitude);		Serial.print(" m\r\n");
 					break;
 		
-		case 'h':	Serial.print("Humidity: ");		Serial.print(ReadHumidity());		Serial.print(" %\r\n");
+		case 'p':	SampleBarometer();
+					Serial.print("Pressure: ");		Serial.print(ss.baro_pressure);		Serial.print(" Pa\r\n");
 					break;
 		
-		case 'r':	Serial.print("Altitude: ");		Serial.print(ReadAltitude());		Serial.print(" m\r\n");
-					Serial.print("Pressure: ");		Serial.print(ReadPressure());		Serial.print(" Pa\r\n");
-					Serial.print("Temperature: ");	Serial.print(ReadTemperature());	Serial.print(" *C\r\n");
-					Serial.print("Humidity: ");		Serial.print(ReadHumidity());		Serial.print(" %\r\n");
+		case 't':	SampleBarometer();
+					Serial.print("Temperature: ");	Serial.print(ss.baro_temperature);	Serial.print(" *C\r\n");
+					break;
+		
+		case 'h':	SampleBarometer();
+					Serial.print("Humidity: ");		Serial.print(ss.baro_humidity);		Serial.print(" %\r\n");
+					break;
+		
+		case 'r':	SampleBarometer();
+					Serial.print("Altitude: ");		Serial.print(ss.baro_altitude);		Serial.print(" m\r\n");
+					Serial.print("Pressure: ");		Serial.print(ss.baro_pressure);		Serial.print(" Pa\r\n");
+					Serial.print("Temperature: ");	Serial.print(ss.baro_temperature);	Serial.print(" *C\r\n");
+					Serial.print("Humidity: ");		Serial.print(ss.baro_humidity);		Serial.print(" %\r\n");		
 					break;
 		
 		case '?':	Serial.print("Barometer Test Harness\r\n================\r\n\n");

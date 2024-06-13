@@ -6,6 +6,8 @@ extern char acc_type[];
 extern int acc_period;
 extern int acc_rate;
 
+extern bool trigger_accel;
+
 int SetupAccelerometer(void);
 void PollAccelerometer(void);
 

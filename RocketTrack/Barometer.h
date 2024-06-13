@@ -10,6 +10,12 @@ extern bool baro_trigger;
 int SetupBarometer(void);
 void PollBarometer(void);
 
+float ReadAltitude(void);
+float ReadPressure(void);
+float ReadTemperature(void);
+float ReadHumidity(void);
+
+
 int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr);
 
 enum

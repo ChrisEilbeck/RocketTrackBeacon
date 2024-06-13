@@ -85,6 +85,7 @@ void setup()
 	
 	SPI.begin(SCK,MISO,MOSI);
 	Wire.begin(SDA,SCL);
+	Wire.setClock(1000000);
 
 	// mandatory peripherals
 
@@ -187,12 +188,14 @@ void loop()
 	PollDisplay();
 	PollScheduler();
 #endif
-#if 0
-	PollAccelerometer();
-	PollMagnetometer();
-	PollGyro();
-	PollBarometer();
-#endif
+
+//	if(!sync_sampling)
+//	{
+		PollAccelerometer();
+		PollMagnetometer();
+//		PollGyro();
+//		PollBarometer();
+//	}
 }
 
 void PollSerial(void)
@@ -228,14 +231,17 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 	{
 		case 'a':	OK=AccelerometerCommandHandler(cmd,cmdptr);		break;
 		case 'b':	OK=BarometerCommandHandler(cmd,cmdptr);			break;
-		case 'y':	OK=GyroCommandHandler(cmd,cmdptr);				break;
-		case 'g':	OK=GPSCommandHandler(cmd,cmdptr);				break;
-		case 'l':	OK=LORACommandHandler(cmd,cmdptr);				break;
-		case 'p':	OK=PMICCommandHandler(cmd,cmdptr);				break;
 		case 'e':	OK=LEDCommandHandler(cmd,cmdptr);				break;
-		case 'o':	OK=LongRangeCommandHandler(cmd,cmdptr);			break;
+		case 'g':	OK=GPSCommandHandler(cmd,cmdptr);				break;
 		case 'h':	OK=HighRateCommandHandler(cmd,cmdptr);			break;
+		case 'l':	OK=LORACommandHandler(cmd,cmdptr);				break;
+		case 'm':	OK=MagnetometerCommandHandler(cmd,cmdptr);		break;
 		case 'n':	OK=NeopixelCommandHandler(cmd,cmdptr);			break;
+		case 'o':	OK=LongRangeCommandHandler(cmd,cmdptr);			break;
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262		
+		case 'p':	OK=PMICCommandHandler(cmd,cmdptr);				break;
+#endif
+		case 'y':	OK=GyroCommandHandler(cmd,cmdptr);				break;
 		case 'z':	OK=BeeperCommandHandler(cmd,cmdptr);			break;
 		
 		case 'x':	OK=1;
@@ -243,16 +249,21 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 					break;
 		
 		case '?':	Serial.print("RocketTrack Test Harness Menu\r\n=================\r\n\n");
-					Serial.print("g\t-\tGPS Commands\r\n");
-					Serial.print("l\t-\tLoRa Commands\r\n");
-					Serial.print("p\t-\tPMIC Commands\r\n");
-					Serial.print("h\t-\tHigh Rate Mode Commands\r\n");
-					Serial.print("o\t-\tLong Range Mode Commands\r\n");
+					Serial.print("a\t-\tAccelerometer Commands\r\n");
+					Serial.print("b\t-\tBarometer Commands\r\n");
 					Serial.print("e\t-\tLed Commands\r\n");
-					Serial.print("n\t-\tNeopixel Commands\r\n");
-					Serial.print("b\t-\tBeeper Commands\r\n");
-					Serial.print("t\t-\tTransmitter Mode\r\n");
-					Serial.print("r\t-\tReceiver Mode\r\n");
+					Serial.print("g\t-\tGPS Commands\r\n");
+					Serial.print("h\t-\tHigh Rate Mode Commands\r\n");
+					Serial.print("l\t-\tLoRa Commands\r\n");
+					Serial.print("m\t-\tMagnetometer Commands\r\n");
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+					Serial.print("p\t-\tPMIC Commands\r\n");
+#endif
+//					Serial.print("n\t-\tNeopixel Commands\r\n");
+					Serial.print("o\t-\tLong Range Mode Commands\r\n");
+//					Serial.print("t\t-\tTransmitter Mode\r\n");
+//					Serial.print("r\t-\tReceiver Mode\r\n");
+					Serial.print("y\t-\tGyro Commands\r\n");
 					Serial.print("?\t-\tShow this menu\r\n");
 					OK=1;
 					break;

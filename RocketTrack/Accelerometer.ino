@@ -1,4 +1,6 @@
 
+#include "SensorState.h"
+
 #include <Adafruit_LSM303_Accel.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
@@ -11,6 +13,8 @@ int acc_type_no=ACCELEROMETER_NONE;
 int last_accel_time=0;
 int accel_period=100;
 int acc_rate=10;
+
+bool trigger_accel=false;
 
 Adafruit_MPU6050 mpu;
 Adafruit_LSM303_Accel_Unified accel=Adafruit_LSM303_Accel_Unified(10001);
@@ -97,53 +101,68 @@ int SetupAccelerometer(void)
 	return(0);
 }
 
+void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
+{
+	sensors_event_t a;
+	sensors_event_t g;
+	sensors_event_t temp;
+			
+	switch(acc_type_no)
+	{
+		case ACCELEROMETER_NONE:		Serial.print("Accelerometer misconfigured, disabling\r\n");
+										acc_enable=0;
+										break;
+		
+		case ACCELEROMETER_MPU6050:		mpu.getEvent(&a,&g,&temp);
+										*accel_x=a.acceleration.x;
+										*accel_y=a.acceleration.y;
+										*accel_z=a.acceleration.z;
+										break;
+		
+		case ACCELEROMETER_LSM303DLHC:	accel.getEvent(&a);
+										*accel_x=a.acceleration.x;
+										*accel_y=a.acceleration.y;
+										*accel_z=a.acceleration.z;
+										break;
+		
+		case ACCELEROMETER_MPU9250:		Serial.print("Accelerometer type not supported yet, disabling\r\n");
+										acc_enable=0;
+										break;
+		
+		case ACCELEROMETER_ADXL345:		Serial.print("Accelerometer type not supported yet, disabling\r\n");
+										acc_enable=0;
+										break;
+		
+		default:						Serial.print("Accelerometer misconfigured, disabling\r\n");
+										acc_enable=0;
+										break;
+	}
+}
+
 void PollAccelerometer(void)
 {
 	if(acc_enable)
 	{
-		if(millis()>(last_accel_time+accel_period))
+		if(sync_sampling)
 		{
-			sensors_event_t a;
-			sensors_event_t g;
-			sensors_event_t temp;
-			
-			switch(acc_type_no)
+			if(trigger_accel)
 			{
-				case ACCELEROMETER_NONE:		Serial.print("Accelerometer misconfigured, disabling\r\n");
-												acc_enable=0;
-												break;
-				
-				case ACCELEROMETER_MPU6050:		mpu.getEvent(&a,&g,&temp);
-												
-												Serial.print("Acceleration X: ");	Serial.print(a.acceleration.x);	Serial.print(", Y: ");	Serial.print(a.acceleration.y);	Serial.print(", Z: ");	Serial.print(a.acceleration.z);	Serial.println(" m/s^2\t");
-	#if 0
-												Serial.print("Rotation X: ");		Serial.print(g.gyro.x);			Serial.print(", Y: ");	Serial.print(g.gyro.y);			Serial.print(", Z: ");	Serial.print(g.gyro.z);			Serial.println(" rad/s\t");
-												Serial.print("Temperature: ");		Serial.print(temp.temperature);	Serial.println(" degC\t");
-	#endif
-											
-												break;
-
-				case ACCELEROMETER_LSM303DLHC:	accel.getEvent(&a);
-												
-												Serial.print("Acceleration X: ");	Serial.print(a.acceleration.x);	Serial.print(", Y: ");	Serial.print(a.acceleration.y);	Serial.print(", Z: ");	Serial.print(a.acceleration.z);	Serial.println(" m/s^2\t");
-												
-												break;
-				
-				case ACCELEROMETER_MPU9250:		Serial.print("Accelerometer type not supported yet, disabling\r\n");
-												acc_enable=0;
-												break;
-				
-				case ACCELEROMETER_ADXL345:		Serial.print("Accelerometer type not supported yet, disabling\r\n");
-												acc_enable=0;
-												break;
-				
-				default:						Serial.print("Accelerometer misconfigured, disabling\r\n");
-												acc_enable=0;
-												break;
+				ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
+				trigger_accel=false;
 			}
-			
-			last_accel_time=millis();
 		}
+		else
+		{	
+			if(millis()>(last_accel_time+accel_period))
+			{
+				ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
+				last_accel_time=millis();
+			}
+		}
+	}
+	else
+	{
+		ss.accel_x=0.0f;	ss.accel_y=0.0f;	ss.accel_z=0.0f;
 	}
 }
 
@@ -157,39 +176,31 @@ int AccelerometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 #endif
 	
 	int retval=1;
-	uint8_t cnt;
-	sensors_event_t a,g,temp;
 	
 	switch(cmd[1]|0x20)
 	{
-		case 'r':	Serial.print("Read accelerometer:\t");
+		case 'd':	Serial.println("Disabling the Accelerometer");
+					acc_enable=false;
+					break;
 					
-
-					switch(acc_type_no)
-					{
-						case ACCELEROMETER_MPU6050:		mpu.getEvent(&a,&g,&temp);
-														Serial.print("Acceleration X: ");	Serial.print(a.acceleration.x);	Serial.print(", Y: ");	Serial.print(a.acceleration.y);	Serial.print(", Z: ");	Serial.print(a.acceleration.z);	Serial.println(" m/s^2\t");
-														break;
-
-						case ACCELEROMETER_LSM303DLHC:	accel.getEvent(&a);
-														Serial.print("Acceleration X: ");	Serial.print(a.acceleration.x);	Serial.print(", Y: ");	Serial.print(a.acceleration.y);	Serial.print(", Z: ");	Serial.print(a.acceleration.z);	Serial.println(" m/s^2\t");
-														break;
-			
-						case ACCELEROMETER_MPU9250:		Serial.print("Accelerometer type not supported yet, disabling\r\n");
-														acc_enable=0;
-														break;
-			
-						case ACCELEROMETER_ADXL345:		Serial.print("Accelerometer type not supported yet, disabling\r\n");
-														acc_enable=0;
-														break;
-
-						default:						Serial.print("Accelerometer disabled\r\n");
-														break;
+		case 'e':	Serial.println("Enabling the Accelerometer");
+					acc_enable=true;
+					break;
+		
+		case 'r':	{
+						float accel_x;
+						float accel_y;
+						float accel_z;
+						
+						ReadAccelerometer(&accel_x,&accel_y,&accel_z);
+						Serial.print("Acceleration X: ");	Serial.print(accel_x);	Serial.print(", Y: ");	Serial.print(accel_y);	Serial.print(", Z: ");	Serial.print(accel_z);	Serial.println(" m/s^2");
 					}
 					
 					break;
-					
+		
 		case '?':	Serial.print("Accelerometer Test Harness\r\n================\r\n\n");
+					Serial.print("d\t-\tDisable the Accelerometer");
+					Serial.print("e\t-\tEnable the Accelerometer");
 					Serial.print("r\t-\tRead sensor\r\n");
 					Serial.print("?\t-\tShow this menu\r\n");
 					break;

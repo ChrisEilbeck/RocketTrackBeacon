@@ -1,6 +1,7 @@
 
 #include "Display.h"
 #include "Packetisation.h"
+#include "SensorState.h"
 
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -90,35 +91,35 @@ void PollDisplay(void)
 		{
 			case 0 ... 5:	display.setTextSize(1);
 							display.println();
-							display.printf("Lat:\r\n %.6f\r\n",beaconlat/1e7);
-							display.printf("Lon:\r\n %.6f\r\n",beaconlon/1e7);		
-							display.printf("Altitude:\r\n %.1f m\r\n",beaconhMSL/1e3);							
+							display.printf("Lat:\r\n %.6f\r\n",ss.gps_latitude);
+							display.printf("Lon:\r\n %.6f\r\n",ss.gps_longitude);		
+							display.printf("Altitude:\r\n %.1f m\r\n",ss.gps_altitude);							
 							break;
 			
 			case 6 ... 7:	display.setTextSize(1);
 							display.print("\r\n# Sats:\r\n  ");
 							display.setTextSize(2);
-							display.println(beaconnumSats);
+							display.println(ss.gps_numsats);
 							break;
 
 			case 8 ... 11:	display.setTextSize(1);
 							display.print("\r\nGPS Alt\r\nCurr\r\n");
 							display.setTextSize(2);
-							display.printf("%.1f\r\n",beaconhMSL/1e3);
+							display.printf("%.1f\r\n",ss.gps_altitude);
 							display.setTextSize(1);
 							display.print("Max\r\n");
 							display.setTextSize(2);
-							display.printf("%.1f\r\n",max_beaconhMSL/1e3);
+							display.printf("%.1f\r\n",ss.gps_max_altitude);
 							break;
 							
 			case 12 ... 15:	display.setTextSize(1);
 							display.print("\r\nBaro Alt\r\nCurr\r\n");
 							display.setTextSize(2);
-							display.printf("%.1f\r\n",baro_height);
+							display.printf("%.1f\r\n",ss.baro_altitude);
 							display.setTextSize(1);
 							display.print("Max\r\n");
 							display.setTextSize(2);
-							display.printf("%.1f\r\n",max_baro_height);
+							display.printf("%.1f\r\n",ss.baro_max_altitude);
 							break;
 		
 			default:		

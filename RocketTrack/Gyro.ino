@@ -1,4 +1,6 @@
 
+#include "SensorState.h"
+
 #include <Adafruit_L3GD20_U.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
@@ -71,17 +73,26 @@ void PollGyro(void)
 	{
 		if(millis()>(last_gyro_time+gyro_period))
 		{
-			SampleGyro();
+			ReadGyro(&ss.gyro_x,&ss.gyro_y,&ss.gyro_z);
 			last_gyro_time=millis();
 		}
 	}
+	else
+	{
+		ss.gyro_x=0.0f;	ss.gyro_y=0.0f;	ss.gyro_z=0.0f;
+	}
 }
 
-void SampleGyro(void)
+void ReadGyro(float *gyro_x,float *gyro_y,float *gyro_z)
 {
 	sensors_event_t g;
 	gyro.getEvent(&g);
 	
+	*gyro_x=g.gyro.x;
+	*gyro_y=g.gyro.y;
+	*gyro_z=g.gyro.z;
+
+#if 0
 	Serial.print("Rotation X: ");
 	Serial.print(g.gyro.x);
 	Serial.print(", Y: ");
@@ -89,6 +100,7 @@ void SampleGyro(void)
 	Serial.print(", Z: ");
 	Serial.print(g.gyro.z);
 	Serial.println(" rad/s\t");
+#endif
 }
 
 int GyroCommandHandler(uint8_t *cmd,uint16_t cmdptr)
@@ -105,13 +117,18 @@ int GyroCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 	switch(cmd[1]|0x20)
 	{
-		case 'r':	Serial.print("Read gyro:\t");
-					sensors_event_t a,g,temp;
-					mpu.getEvent(&a,&g,&temp);
-										
-					Serial.print("X: ");	Serial.print(g.acceleration.x);	
-					Serial.print(", Y: ");	Serial.print(g.acceleration.y);	
-					Serial.print(", Z: ");	Serial.print(g.acceleration.z);	Serial.print(" degs/s\r\n");
+		case 'r':	{
+						float gyro_x;
+						float gyro_y;
+						float gyro_z;
+						
+						ReadGyro(&gyro_x,&gyro_y,&gyro_z);
+
+						Serial.print("Read gyro:\t");
+						Serial.print("X: ");	Serial.print(gyro_x);	
+						Serial.print(", Y: ");	Serial.print(gyro_y);	
+						Serial.print(", Z: ");	Serial.print(gyro_z);	Serial.print(" degs/s\r\n");
+					}
 					
 					break;
 					
