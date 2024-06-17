@@ -127,6 +127,8 @@ float ReadAltitude(void)
 		bmp.getPressure(&pressure);
 		return(bmp.pressureToAltitude(SENSORS_PRESSURE_SEALEVELHPA,pressure/100.0F));
 	}
+	
+	return(0.0F);
 }
 
 float ReadPressure(void)
@@ -140,6 +142,8 @@ float ReadPressure(void)
 		bmp.getPressure(&pressure);
 		return(pressure);
 	}
+	
+	return(0.0F);
 }
 
 float ReadTemperature(void)
@@ -153,6 +157,8 @@ float ReadTemperature(void)
 		bmp.getTemperature(&temperature);
 		return(temperature);
 	}
+	
+	return(0.0F);
 }
 
 float ReadHumidity(void)
@@ -160,10 +166,7 @@ float ReadHumidity(void)
 	if(strstr(baro_type,"BME280")!=NULL)
 		return(bme.readHumidity());
 	
-	if(strstr(baro_type,"BMP180")!=NULL)
-	{
-		return(0.0F);
-	}
+	return(0.0F);
 }
 
 int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)

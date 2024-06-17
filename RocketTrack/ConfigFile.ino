@@ -14,7 +14,10 @@
 #include "Webserver.h"
 
 #include <IniFile.h>
-#include <SPIFFSIniFile.h>
+
+#ifndef ADAFRUIT_FEATHER_M0
+	#include <SPIFFSIniFile.h>
+#endif
 
 enum
 {
@@ -22,12 +25,6 @@ enum
 	CFGINTEGER,
 	CFGFLOAT,
 	CFGIPADDRESS
-};
-
-enum
-{
-	WIFI_STATION_MODE=0,
-	WIFI_AP_MODE
 };
 
 typedef struct
@@ -132,7 +129,11 @@ int ReadConfigFileSDCard(void)
 		// Cannot do anything else
 		return(1);
 	}
+	
+	return(0);
 }
+
+#ifndef ADAFRUIT_FEATHER_M0
 
 int ReadConfigFileSPIFFS(void)
 {
@@ -216,6 +217,8 @@ int ReadConfigFileSPIFFS(void)
 	return(0);
 }
 
+#endif
+
 void ReadConfigFile(void)
 {
 	int sdcard_read_error=0;
@@ -237,8 +240,12 @@ void ReadConfigFile(void)
 		if(spiffs_enable)
 		{
 #endif
+#ifndef ADAFRUIT_FEATHER_M0
 			Serial.println("\tAttempting to read the config from SPI Flash");
 			spiffs_read_error=ReadConfigFileSPIFFS();
+#else
+			spiffs_read_error=1;
+#endif
 			
 			if(spiffs_read_error)
 				Serial.println("\tReading the config from SPI Flash failed ...");

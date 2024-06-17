@@ -31,9 +31,9 @@ int gps_type_num=GPS_NMEA;
 
 	#include <SoftwareSerial.h>
 //	EspSoftwareSerial::UART GPSSerialPort;
-
 	Adafruit_GPS gpsi2c(&Wire);
 	
+	#define GPSSerialPort gpsi2c
 	
 	#include "MTK_GPS.h"
 //	MTK_GPS gps(GPSSerialPort);
@@ -137,7 +137,7 @@ int SetupGPS(void)
 #elif ARDUINO_TTGO_LoRa32_v21new
 //	GPSSerialPort.begin(initial_baud,EspSoftwareSerial::SWSERIAL_8N1,GPS_RXD,GPS_TXD,false,95,11);
 
-	gpsi2c.begin(0x10);
+	GPSSerialPort.begin(0x10);
 	
 #elif BOARD_FEATHER
 	Serial.println("GPS support not present for the Feather board yet, aborting ...");
@@ -232,10 +232,9 @@ void PollGPS(void)
 #else
 
 //	while(GPSSerialPort.available())
-	if(gpsi2c.available())
+	if(GPSSerialPort.available())
 	{
-//		rxbyte=GPSSerialPort.read();
-		rxbyte=gpsi2c.read();
+		rxbyte=GPSSerialPort.read();
 		
 //		gpsbuffer[bufferptr++]=rxbyte;
 //		if(bufferptr>=sizeof(gpsbuffer))	bufferptr=0;

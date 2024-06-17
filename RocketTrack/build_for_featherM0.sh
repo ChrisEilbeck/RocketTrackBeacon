@@ -1,6 +1,6 @@
 #!/bin/bash
 
-##arduino-cli lib install SD
+arduino-cli lib install SD
 
 arduino-cli lib install "adafruit spiflash"
 arduino-cli lib install "sdfat - adafruit fork"

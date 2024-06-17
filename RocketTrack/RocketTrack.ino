@@ -25,21 +25,12 @@ to be done
 
 
 
-
-
-
-
-
-
 */ 
 
 #include <axp20x.h>
 #include <LoRa.h>
 #include <SPI.h>
 #include <Wire.h>
-
-// To be included only in main(), .ino with setup() to avoid `Multiple Definitions` Linker Error
-//#include "ESP32TimerInterrupt.h"
 
 #include "HardwareAbstraction.h"
 
@@ -82,8 +73,13 @@ void setup()
 #endif
 	
 	Serial.print("\n--------\tRocketTrack Flight Telemetry System\t--------\r\n\n");
-	
+
+#ifndef ADAFRUIT_FEATHER_M0	
 	SPI.begin(SCK,MISO,MOSI);
+#else
+	SPI.begin();
+#endif
+
 	Wire.begin(SDA,SCL);
 	Wire.setClock(1000000);
 
@@ -322,6 +318,8 @@ void i2c_bus_scanner(void)
 	//	I2C device found at address 0x76  !		// BME280 pressure sensor  
 }
 
+#ifndef ADAFRUIT_FEATHER_M0
+
 bool IRAM_ATTR TinerHandler0(void *timerNo)
 {
 
@@ -329,4 +327,6 @@ bool IRAM_ATTR TinerHandler0(void *timerNo)
 
 	return(true);
 }
+
+#endif
 

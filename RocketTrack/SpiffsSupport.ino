@@ -1,6 +1,7 @@
 
-//#include "FS.h"
-#include "SPIFFS.h"
+#ifndef ADAFRUIT_FEATHER_M0
+//	#include "FS.h"
+    #include "SPIFFS.h"
 
 int spiffs_enable=1;
 
@@ -225,5 +226,7 @@ int SetupSPIFFS(void)
     
 	return(0);
 }
+#endif
+
 #endif
 

@@ -1,5 +1,5 @@
 
-#define STATIONMODE 1
+#ifndef ADAFRUIT_FEATHER_M0
 
 #include "WiFiSupport.h"
 
@@ -32,4 +32,6 @@ int SetupWiFi(void)
 	
 	return(0);
 }
+
+#endif
 

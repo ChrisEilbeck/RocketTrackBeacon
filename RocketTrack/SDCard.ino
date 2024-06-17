@@ -1,7 +1,11 @@
 
-#include "FS.h"
-//#include "SD.h"
-#include "SD_MMC.h"
+#ifndef ADAFRUIT_FEATHER_M0
+	#include "FS.h"
+//	#include "SD.h"
+	#include "SD_MMC.h"
+#else
+
+#endif
 
 bool sdcard_enable=false;
 

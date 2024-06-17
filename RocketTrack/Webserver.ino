@@ -1,4 +1,6 @@
 
+#ifndef ADAFRUIT_FEATHER_M0
+
 #include "Logging.h"
 #include "LoRaModule.h"
 #include "Packetisation.h"
@@ -247,4 +249,6 @@ void PollWebServer(void)
 {
 	
 }
+
+#endif
 

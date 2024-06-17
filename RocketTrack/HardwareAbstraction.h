@@ -67,7 +67,7 @@
 	#define GPS_BAUD_RATE	9600
 	#define GPS_1PPS		34
 
-#elif BOARD_FEATHER
+#elif ADAFRUIT_FEATHER_M0
 
 	#define LED_PIN			13
 	#define LED_ON			HIGH
@@ -80,7 +80,7 @@
 	#define SDA				17
 	#define SCL				18
 	
-	#define USER_BUTTOIN	-1
+	#define USER_BUTTON		-1
 
 	#define GPS_BAUD_RATE	9600
 	#define GPS_1PPS		5		// GPIO5

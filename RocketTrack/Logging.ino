@@ -17,10 +17,15 @@ int SetupLogging(void)
 int OpenLogFile(void)
 {
 
+
+	return(0);
 }
 
 int LogMessage(char *logmsg)
 {
 
+
+
+	return(0);
 }
 
