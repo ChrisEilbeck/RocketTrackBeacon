@@ -88,12 +88,12 @@ void setup()
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
 #endif
-#if 0	
+	
 	// SD card is optional but if present, modes of operation are configured
 	// from a file rather than just compiled-in defaults.  It will also use
 	// a more elaborate web page too
 	
-#if 1
+#if 0
 	if(SetupSDCard())			{	Serial.println("SD Card Setup failed, disabling ...\r\n");					sdcard_enable=0;		}
 #endif
 
@@ -109,6 +109,7 @@ void setup()
 		
 	ReadConfigFile();
 
+#if 0
 	if(!sdcard_enable)		logging_enable=0;
 	else					SetupLogging();
 	
@@ -121,8 +122,9 @@ void setup()
 	wifi_enable=0;
 	webserver_enable=0;
 #endif
-
+#endif
 	if(acc_enable&&SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");	acc_enable=0;			}
+#if 0
 	if(gyro_enable&&SetupGyro())			{	Serial.println("Gyro setup failed, disabling ...");				gyro_enable=0;			}
 	if(mag_enable&&SetupMagnetometer())		{	Serial.println("Magnetometer setup failed, disabling ...");		mag_enable=0;			}
 	if(baro_enable&&SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");		baro_enable=0;			}
@@ -136,7 +138,7 @@ void setup()
 	#if 0
 		Serial.println(crypto_key_hex);	DumpHexPacket(crypto_key,32);
 	#endif
-	
+
 	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
 #endif
 
@@ -169,9 +171,9 @@ void loop()
 	PollSerial();
 
 #ifndef USE_FREERTOS
-	commented out to use as a FreeRTOS task instead
 	PollLEDs();
 #endif
+
 #if 0
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	PollPMIC();

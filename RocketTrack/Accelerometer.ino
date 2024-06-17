@@ -98,6 +98,14 @@ int SetupAccelerometer(void)
 		acc_enable=0;
 	}
 	
+	xTaskCreate(
+					PollAccelerometer,"Accel Task",
+					2048,
+					NULL,
+					2,
+					NULL
+				);
+	
 	return(0);
 }
 
@@ -139,6 +147,36 @@ void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
 	}
 }
 
+#ifdef USE_FREERTOS
+void PollAccelerometer(void *pvParameters)
+{
+	while(1)
+	{
+		if(acc_enable)
+		{
+			if(sync_sampling)
+			{
+				if(trigger_accel)
+				{
+					ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
+					trigger_accel=false;
+				}
+			}
+			else
+			{
+				ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
+			}
+			
+			delay(accel_period);
+		}
+		else
+		{
+			ss.accel_x=0.0f;	ss.accel_y=0.0f;	ss.accel_z=0.0f;
+			delay(1000);
+		}
+	}
+}
+#else
 void PollAccelerometer(void)
 {
 	if(acc_enable)
@@ -165,6 +203,7 @@ void PollAccelerometer(void)
 		ss.accel_x=0.0f;	ss.accel_y=0.0f;	ss.accel_z=0.0f;
 	}
 }
+#endif
 
 int AccelerometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 {
@@ -193,15 +232,19 @@ int AccelerometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 						float accel_z;
 						
 						ReadAccelerometer(&accel_x,&accel_y,&accel_z);
-						Serial.print("Acceleration X: ");	Serial.print(accel_x);	Serial.print(", Y: ");	Serial.print(accel_y);	Serial.print(", Z: ");	Serial.print(accel_z);	Serial.println(" m/s^2");
+						Serial.print("Accel X: ");	Serial.print(accel_x);	Serial.print(", Y: ");	Serial.print(accel_y);	Serial.print(", Z: ");	Serial.print(accel_z);	Serial.println(" m/s^2");
 					}
 					
+					break;
+		
+		case 't':	Serial.print("Accel X: ");	Serial.print(ss.accel_x);	Serial.print(", Y: ");	Serial.print(ss.accel_y);	Serial.print(", Z: ");	Serial.print(ss.accel_z);	Serial.println(" m/s^2");
 					break;
 		
 		case '?':	Serial.print("Accelerometer Test Harness\r\n================\r\n\n");
 					Serial.print("d\t-\tDisable the Accelerometer");
 					Serial.print("e\t-\tEnable the Accelerometer");
 					Serial.print("r\t-\tRead sensor\r\n");
+					Serial.print("t\t-\tShow last reading\r\n");
 					Serial.print("?\t-\tShow this menu\r\n");
 					break;
 		
