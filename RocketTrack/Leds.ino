@@ -25,6 +25,16 @@ int SetupLEDs(void)
 	LedRepeatCount=0;
 	LedBitCount=0;					
 
+#ifdef USE_FREERTOS
+	xTaskCreate(
+					PollLEDs,"LED Task",
+					2048,
+					NULL,
+					2,						// Medium priority
+					NULL
+				);
+#endif
+	
 	return(0);
 }
 

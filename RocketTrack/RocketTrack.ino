@@ -142,15 +142,6 @@ void setup()
 
 	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=0;			}
 
-#ifdef USE_FREERTOS
-	xTaskCreate(
-					PollLEDs,"LED Task",
-					2048,
-					NULL,
-					2,						// Medium priority
-					NULL
-				);
-#endif
 #if 0
 		// optional peripherals
 
