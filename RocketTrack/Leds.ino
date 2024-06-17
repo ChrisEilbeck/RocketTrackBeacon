@@ -28,6 +28,41 @@ int SetupLEDs(void)
 	return(0);
 }
 
+#ifdef USE_FREERTOS
+void PollLEDs(void *pvParameters)
+{
+	while(1)
+	{
+		if(leds_enable)
+		{
+//			Serial.println(".");
+		
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
+			if(LedPattern&0x8000000)		ControlLED(AXP20X_LED_LOW_LEVEL);
+			else							ControlLED(AXP20X_LED_OFF);
+#else
+			if(LED_PIN>=0)
+			{
+				if(LedPattern&0x8000000)	digitalWrite(LED_PIN,LED_ON);
+				else						digitalWrite(LED_PIN,LED_OFF);
+			}
+#endif
+						
+			if(LedRepeatCount>0)			LedPattern=(LedPattern<<1)|(LedPattern>>31);
+			else							LedPattern=(LedPattern<<1);
+			
+			LedBitCount++;
+			if(LedBitCount>=32)
+			{
+				if(LedRepeatCount>0)	LedRepeatCount--;
+				LedBitCount=0;
+			}
+
+			delay(led_period);				
+		}
+	}
+}
+#else
 void PollLEDs(void)
 {
 	if(leds_enable)
@@ -62,6 +97,7 @@ void PollLEDs(void)
 		}
 	}
 }
+#endif
 
 int LEDCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 {

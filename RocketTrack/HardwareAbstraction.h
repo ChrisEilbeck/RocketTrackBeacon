@@ -33,6 +33,8 @@
 
 	#pragma message "Building for TTGO Paxcounter V1.6"
 
+	#define USE_FREERTOS	1
+
 	#define LED_PIN			25
 	#define LED_ON			HIGH
 	#define LED_OFF			LOW

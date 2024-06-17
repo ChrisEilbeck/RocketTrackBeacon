@@ -88,7 +88,7 @@ void setup()
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
 #endif
-	
+#if 0	
 	// SD card is optional but if present, modes of operation are configured
 	// from a file rather than just compiled-in defaults.  It will also use
 	// a more elaborate web page too
@@ -138,9 +138,19 @@ void setup()
 	#endif
 	
 	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
+#endif
 
 	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=0;			}
 
+#ifdef USE_FREERTOS
+	xTaskCreate(
+					PollLEDs,"LED Task",
+					2048,
+					NULL,
+					2,						// Medium priority
+					NULL
+				);
+#endif
 #if 0
 		// optional peripherals
 
@@ -166,8 +176,12 @@ int counter=0;
 void loop()
 {
 	PollSerial();
-	PollLEDs();
 
+#ifndef USE_FREERTOS
+	commented out to use as a FreeRTOS task instead
+	PollLEDs();
+#endif
+#if 0
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	PollPMIC();
 #endif
@@ -192,6 +206,8 @@ void loop()
 //		PollGyro();
 //		PollBarometer();
 //	}
+
+#endif
 }
 
 void PollSerial(void)
