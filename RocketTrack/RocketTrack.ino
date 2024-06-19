@@ -54,13 +54,15 @@ to be done
 #include "Webserver.h"
 #include "WiFiSupport.h"
 
+SemaphoreHandle_t i2c_mutex;
+
 extern char crypto_key_hex[65];
 extern uint8_t crypto_key[32];
 
 char tracker_mode[32];
-int sync_sampling=1;
+bool sync_sampling=true;
 
-void PollSerial(void);
+//void PollSerial(void);
 
 void setup()
 {
@@ -81,7 +83,7 @@ void setup()
 #endif
 
 	Wire.begin(SDA,SCL);
-	Wire.setClock(1000000);
+	Wire.setClock(400000);
 
 	// mandatory peripherals
 
@@ -94,10 +96,10 @@ void setup()
 	// a more elaborate web page too
 	
 #if 0
-	if(SetupSDCard())			{	Serial.println("SD Card Setup failed, disabling ...\r\n");					sdcard_enable=0;		}
+	if(SetupSDCard())			{	Serial.println("SD Card Setup failed, disabling ...\r\n");					sdcard_enable=false;	}
 #endif
 
-	if(SetupSPIFFS())			{	Serial.println("SPIFFS Setup failed, disabling ...\r\n");					spiffs_enable=0;		}
+	if(SetupSPIFFS())			{	Serial.println("SPIFFS Setup failed, disabling ...\r\n");					spiffs_enable=false;	}
 
 #if 0
 	Serial.println("Hanging for now ...");
@@ -110,58 +112,62 @@ void setup()
 	ReadConfigFile();
 
 #if 0
-	if(!sdcard_enable)		logging_enable=0;
+	if(!sdcard_enable)		logging_enable=false;
 	else					SetupLogging();
 	
 	SetupDisplay();
 	
 #ifdef ARDUINO_ARCH_ESP32
-	if(SetupWiFi())				{	Serial.println("WiFi connection failed, disabling ...");					wifi_enable=0;			}
-	if(SetupWebServer())		{	Serial.println("Web Server Setup failed, disabling ...");					webserver_enable=0;		}
+	if(SetupWiFi())				{	Serial.println("WiFi connection failed, disabling ...");					wifi_enable=false;		}
+	if(SetupWebServer())		{	Serial.println("Web Server Setup failed, disabling ...");					webserver_enable=false;	}
 #else
-	wifi_enable=0;
-	webserver_enable=0;
+	wifi_enable=false;
+	webserver_enable=false;
 #endif
 #endif
-	if(acc_enable&&SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");	acc_enable=0;			}
-#if 0
-	if(gyro_enable&&SetupGyro())			{	Serial.println("Gyro setup failed, disabling ...");				gyro_enable=0;			}
-	if(mag_enable&&SetupMagnetometer())		{	Serial.println("Magnetometer setup failed, disabling ...");		mag_enable=0;			}
-	if(baro_enable&&SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");		baro_enable=0;			}
 
+//	acc_enable=false;
+	baro_enable=false;
+//	gyro_enable=false;
+//	mag_enable=false;
+	
+	if(acc_enable&&SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");	acc_enable=false;		}
+	if(gyro_enable&&SetupGyro())			{	Serial.println("Gyro setup failed, disabling ...");				gyro_enable=false;		}
+	if(mag_enable&&SetupMagnetometer())		{	Serial.println("Magnetometer setup failed, disabling ...");		mag_enable=false;		}
+	if(baro_enable&&SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");		baro_enable=false;		}
+	
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 //	SetupOnePPS();
 
-	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
-	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
+//	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
+//	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
 	#if 0
 		Serial.println(crypto_key_hex);	DumpHexPacket(crypto_key,32);
 	#endif
 
-	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
-#endif
+//	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
 
-	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=0;			}
+	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=false;		}
 
 #if 0
-		// optional peripherals
-
+	// optional peripherals
 	#if 0
-		if(SetupBeeper())			{	Serial.println("Beeper Setup failed, disabling ...\r\n");					beeper_enable=0;	}
-		if(SetupNeopixels())		{	Serial.println("Neopixels Setup failed, disabling ...\r\n");				neopixels_enable=0;	}
+		if(SetupBeeper())			{	Serial.println("Beeper Setup failed, disabling ...\r\n");				beeper_enable=false;	}
+		if(SetupNeopixels())		{	Serial.println("Neopixels Setup failed, disabling ...\r\n");			neopixels_enable=false;	}
 	#endif
 	#if 0
-		if(SetupTimers())			{	Serial.println("Timer Setup failed, falling back to software timing ...");	timer_enable=0;		}
+		if(SetupTimers())			{	Serial.println("Timer Setup failed, falling back to software timing ...");	timer_enable=false;	}
 	#endif
 #endif
 
-//	acc_enable=0;
+//	acc_enable=false;
 
 	Serial.println(baro_enable?"Barometer enabled":"Barometer disabled");
 	Serial.println(acc_enable?"Accelerometer enabled":"Accelerometer disabled");
 	Serial.println(gyro_enable?"Gyro enabled":"Gyro disabled");
-	Serial.println(baro_enable?"Magnetometer enabled":"Magnetometer disabled");
+	Serial.println(mag_enable?"Magnetometer enabled":"Magnetometer disabled");
+	Serial.println("");
 }
 
 int counter=0;
@@ -171,35 +177,7 @@ void loop()
 	PollSerial();
 
 #ifndef USE_FREERTOS
-	PollLEDs();
-#endif
-
-#if 0
-#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
-	PollPMIC();
-#endif
-
 	PollGPS();
-
-#if 0
-	PollOnePPS();
-#endif
-
-	PollLoRa();
-
-#if 0
-	PollDisplay();
-	PollScheduler();
-#endif
-
-//	if(!sync_sampling)
-//	{
-		PollAccelerometer();
-		PollMagnetometer();
-//		PollGyro();
-//		PollBarometer();
-//	}
-
 #endif
 }
 

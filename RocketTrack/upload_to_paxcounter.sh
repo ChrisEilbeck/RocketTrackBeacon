@@ -1,12 +1,13 @@
 #!/bin/bash
 
 VERBOSE=--verbose
-##BOARD=esp32:esp32:t-beam
 BOARD=esp32:esp32:ttgo-lora32:Revision=TTGO_LoRa32_v21new
 
 PORT=/dev/ttyUSB0
 
 arduino-cli upload ${VERBOSE} --fqbn ${BOARD} --port ${PORT}
+
+##exit
 
 rm data/*~ 2>/dev/null
 

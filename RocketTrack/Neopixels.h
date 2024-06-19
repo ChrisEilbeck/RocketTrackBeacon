@@ -1,8 +1,10 @@
 
-#ifndef _NEOPIXELS_H_
-#define _NEOPIXELS_H_
+#pragma once
 
-	extern bool neopixels_enable;
+extern bool neopixels_enable;
 
-#endif
+int SetupNeopixels(void);
+void PollNeopixels(void);
+
+int NeopixelCommandHandler(uint8_t *cmd,uint16_t cmdptr);
 

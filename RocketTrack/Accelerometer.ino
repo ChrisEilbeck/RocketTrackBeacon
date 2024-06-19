@@ -1,4 +1,6 @@
 
+#define DEBUG	1
+
 #include "SensorState.h"
 
 #include <Adafruit_LSM303_Accel.h>
@@ -7,20 +9,22 @@
 
 #include <string.h>
 
-int acc_enable=1;
+bool acc_enable=false;
+
 char acc_type[32]="None";
 int acc_type_num=ACCELEROMETER_NONE;
 int last_accel_time=0;
 int accel_period=100;
-int acc_rate=10;
+int accel_rate=10;
 
-bool trigger_accel=false;
+bool accel_trigger=false;
 
 Adafruit_MPU6050 mpu;
 Adafruit_LSM303_Accel_Unified accel=Adafruit_LSM303_Accel_Unified(10001);
 
 void DisplayAccelerometerDetails(void)
 {
+#if (DEBUG>0)
 	sensor_t sensor;
 	accel.getSensor(&sensor);
 
@@ -42,6 +46,7 @@ void DisplayAccelerometerDetails(void)
 	Serial.println(" m/s^2");
 	Serial.println("------------------------------------");
 	Serial.println("");
+#endif
 }
 
 int SetupAccelerometer(void)
@@ -98,8 +103,11 @@ int SetupAccelerometer(void)
 		acc_enable=0;
 	}
 
+	accel_period=1000/accel_rate;
+
 #ifdef USE_FREERTOS	
-	xTaskCreate(PollAccelerometer,"Accelerometer Task",2048,NULL,2,NULL);
+	xTaskCreatePinnedToCore(PollAccelerometer,"Accelerometer Task",2048,NULL,2,NULL,0);
+//	xTaskCreate(PollAccelerometer,"Accelerometer Task",2048,NULL,2,NULL);
 #endif
 	
 	return(0);
@@ -107,6 +115,8 @@ int SetupAccelerometer(void)
 
 void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
 {
+	Serial.println("\t\tSampling the Accelerometer");
+
 	sensors_event_t a;
 	sensors_event_t g;
 	sensors_event_t temp;
@@ -146,30 +156,29 @@ void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
 #ifdef USE_FREERTOS
 void PollAccelerometer(void *pvParameters)
 {
+	delay(1000);
+	
 	while(1)
 	{
 		if(acc_enable)
 		{
 			if(sync_sampling)
 			{
-				if(trigger_accel)
+				if(accel_trigger)
 				{
 					ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
-					trigger_accel=false;
+					accel_trigger=false;
 				}
 			}
 			else
-			{
 				ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
-			}
-			
-			delay(accel_period);
 		}
 		else
 		{
 			ss.accel_x=0.0f;	ss.accel_y=0.0f;	ss.accel_z=0.0f;
-			delay(1000);
 		}
+		
+		delay(accel_period);
 	}
 }
 #else
@@ -179,10 +188,10 @@ void PollAccelerometer(void)
 	{
 		if(sync_sampling)
 		{
-			if(trigger_accel)
+			if(accel_trigger)
 			{
 				ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
-				trigger_accel=false;
+				accel_trigger=false;
 			}
 		}
 		else

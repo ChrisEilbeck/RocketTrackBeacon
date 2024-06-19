@@ -84,6 +84,7 @@ String processor(const String& var)
 	{
 		sprintf(buffer,"%.1f",beaconheight/1e3);
 	}
+#if 0
 	else if(var=="NUM_CHANNELS")
 	{
 		sprintf(buffer,"%d",beaconnumsats);
@@ -140,6 +141,7 @@ String processor(const String& var)
 				sprintf(buffer+strlen(buffer),"%d",cno[cnt]);
 		}
 	}
+#endif
 	
 //	Serial.println("webserver process exit");
 	

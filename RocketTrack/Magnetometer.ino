@@ -1,4 +1,6 @@
 
+#define DEBUG	1
+
 #include "SensorState.h"
 
 #include <Adafruit_LSM303DLH_Mag.h>
@@ -7,12 +9,12 @@
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_LSM303DLH_Mag_Unified mag=Adafruit_LSM303DLH_Mag_Unified(10003);
 
-int mag_enable=1;
+bool mag_enable=false;
 
-bool trigger_mag=false;
+bool mag_trigger=false;
 
 char mag_type[32]="Generic";
-int mag_type_no=MAGNETOMETER_NONE;
+int mag_type_num=MAGNETOMETER_NONE;
 
 int mag_period=100;
 int last_mag_time=0;
@@ -42,7 +44,7 @@ int SetupMagnetometer(void)
 
 		DisplayMagnetometerDetails();
 		
-		mag_type_no=MAGNETOMETER_LSM303DLHC;
+		mag_type_num=MAGNETOMETER_LSM303DLHC;
 		mag_enable=1;
 	}
 	else
@@ -50,12 +52,21 @@ int SetupMagnetometer(void)
 		Serial.println("Magnetometer mis-configured, disabling");
 		mag_enable=0;
 	}
-	
+
+	mag_period=1000/mag_rate;
+
+#ifdef USE_FREERTOS	
+	xTaskCreatePinnedToCore(PollMagnetometer,"Magnetometer Task",2048,NULL,2,NULL,0);
+//	xTaskCreate(PollMagnetometer,"Magnetometer Task",2048,NULL,2,NULL);
+#endif
+		
 	return(0);
 }
 
 void ReadMagnetometer(float *mag_x,float *mag_y,float *mag_z)
 {
+	Serial.println("\t\t\t\tSampling the Magnetometer");
+
 	sensors_event_t event;
 	mag.getEvent(&event);
 
@@ -77,16 +88,45 @@ void ReadMagnetometer(float *mag_x,float *mag_y,float *mag_z)
 #endif
 }
 
+#ifdef USE_FREERTOS
+void PollMagnetometer(void *pvParameters)
+{
+	delay(1000);
+	
+	while(1)
+	{
+		if(mag_enable)
+		{
+			if(sync_sampling)
+			{
+				if(mag_trigger)
+				{
+					ReadMagnetometer(&ss.mag_x,&ss.mag_y,&ss.mag_z);
+					mag_trigger=false;
+				}
+			}
+			else
+				ReadMagnetometer(&ss.mag_x,&ss.mag_y,&ss.mag_z);
+		}
+		else
+		{
+			ss.mag_x=0.0f;	ss.mag_y=0.0f;	ss.mag_z=0.0f;
+		}
+		
+		delay(mag_period);
+	}
+}
+#else
 void PollMagnetometer(void)
 {
 	if(mag_enable)
 	{
 		if(sync_sampling)
 		{
-			if(trigger_mag)
+			if(mag_trigger)
 			{
 				ReadMagnetometer(&ss.mag_x,&ss.mag_y,&ss.mag_z);			
-				trigger_mag=false;
+				mag_trigger=false;
 			}
 		}
 		else
@@ -103,9 +143,11 @@ void PollMagnetometer(void)
 		ss.mag_x=0.0f;	ss.mag_y=0.0f;	ss.mag_z=0.0f;
 	}
 }
+#endif
 
 void DisplayMagnetometerDetails(void)
 {
+#if (DEBUG>0)
 	sensor_t sensor;
 	mag.getSensor(&sensor);
 	
@@ -127,6 +169,7 @@ void DisplayMagnetometerDetails(void)
 	Serial.println(" uT");
 	Serial.println("------------------------------------");
 	Serial.println("");
+#endif
 }
 
 int MagnetometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)

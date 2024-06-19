@@ -1,12 +1,12 @@
 
 #pragma once
 
-extern int acc_enable;
+extern bool acc_enable;
 extern char acc_type[];
 extern int acc_period;
-extern int acc_rate;
+extern int accel_rate;
 
-extern bool trigger_accel;
+extern bool accel_trigger;
 
 int SetupAccelerometer(void);
 void PollAccelerometer(void);

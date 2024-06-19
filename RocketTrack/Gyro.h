@@ -1,7 +1,9 @@
 
 #pragma once
 
-extern int gyro_enable;
+extern bool gyro_enable;
+extern bool gyro_trigger;
+
 extern char gyro_type[];
 extern int gyro_rate;
 

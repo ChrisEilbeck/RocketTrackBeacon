@@ -10,10 +10,10 @@
 #include "GpsOnePPS.h"
 #include "SensorState.h"
 
-bool baro_enable=true;
+bool baro_enable=false;
 
 bool baro_trigger=false;
-int baro_gps_sync=0;
+bool baro_gps_sync=false;
 
 char baro_type[32]="Generic";
 int baro_type_num=BAROMETER_NONE;
@@ -69,15 +69,15 @@ int SetupBarometer(void)
 		baro_enable=false;
 	}
 	
-	if(baro_rate!=0)
-		baro_period=1000/baro_rate;
+	baro_period=1000/baro_rate;
 	
 	Serial.printf("Baro period = %d\r\n",baro_period);
 	
 	Serial.println("Barometer configured\n");
 
 #ifdef USE_FREERTOS	
-	xTaskCreate(PollAccelerometer,"Accelerometer Task",2048,NULL,2,NULL);
+	xTaskCreatePinnedToCore(PollBarometer,"Barometer Task",2048,NULL,2,NULL,0);
+//	xTaskCreate(PollBarometer,"Barometer Task",2048,NULL,2,NULL);
 #endif
 	
 	return(0);
@@ -86,27 +86,29 @@ int SetupBarometer(void)
 #ifdef USE_FREERTOS
 void PollBarometer(void *pvParameters)
 {
+	delay(1000);
+	
 	while(1)
 	{
 		if(baro_enable)
 		{
 			if(sync_sampling)
 			{
-				if(trigger_accel)
+				if(baro_trigger)
 				{
 					ReadBarometer();
-					trigger_accel=false;
+					baro_trigger=false;
 				}
 			}
 			else
-				ReadBarometer();
-				
-			delay(baro_period);
+				ReadBarometer();		
 		}
 		else
 		{
 			ss.baro_altitude=0.0f;	ss.baro_pressure=0.0f;	ss.baro_temperature=0.0f;	ss.baro_humidity=0.0f;
 		}
+		
+		delay(baro_period);
 	}
 }
 #else
@@ -129,6 +131,8 @@ void PollBarometer(void)
 
 void ReadBarometer(void)
 {
+	Serial.println("\tSampling the Barometer");
+
 	ss.baro_altitude=ReadAltitude();
 	ss.baro_pressure=ReadPressure();
 	ss.baro_temperature=ReadTemperature();

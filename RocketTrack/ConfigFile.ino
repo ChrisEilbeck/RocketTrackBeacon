@@ -24,7 +24,8 @@ enum
 	CFGSTRING=0,
 	CFGINTEGER,
 	CFGFLOAT,
-	CFGIPADDRESS
+	CFGIPADDRESS,
+	CFGBOOL
 };
 
 typedef struct
@@ -40,14 +41,14 @@ configvalue_t config[]={
 	{	"Tracker",			"Autostart",		(void *)&lora_constant_transmit,	CFGINTEGER,		"0"					},
 	{	"Tracker",			"Mode",				(void *)&tracker_mode,				CFGSTRING,		"TX"				},
 	{	"Tracker",			"SyncSensorsToGPS",	(void *)&sync_sampling,				CFGINTEGER,		"1"					},
-	{	"Crypto",			"Enable",			(void *)&crypto_enable,				CFGINTEGER,		"1"					},
+	{	"Crypto",			"Enable",			(void *)&crypto_enable,				CFGBOOL,		"1"					},
 	{	"Crypto",			"Key",				(void *)crypto_key_hex,				CFGSTRING,		""					},
-	{	"WiFi",				"Enable",			(void *)&wifi_enable,				CFGINTEGER,		"1"					},
+	{	"WiFi",				"Enable",			(void *)&wifi_enable,				CFGBOOL,		"1"					},
 	{	"WiFi",				"SSID",				(void *)ssid,						CFGSTRING,		"RocketTrack"		},
 	{	"WiFi",				"Password",			(void *)password,					CFGSTRING,		"marsflightcrew"	},
 	{	"LoRa",				"Frequency",		(void *)&lora_freq,					CFGFLOAT,		"434.150"			},
 	{	"LoRa",				"Mode",				(void *)lora_mode,					CFGSTRING,		"High Rate"			},
-	{	"LoRa",				"EnableCRC",		(void *)&lora_crc,					CFGINTEGER,		"1"					},
+	{	"LoRa",				"EnableCRC",		(void *)&lora_crc,					CFGBOOL,		"1"					},
 	{	"High Rate",		"Bandwidth",		(void *)&hr_bw,						CFGINTEGER,		"125000"			},
 	{	"High Rate",		"SpreadingFactor",	(void *)&hr_sf,						CFGINTEGER,		"7"					},
 	{	"High Rate",		"CodingRate",		(void *)&hr_cr,						CFGINTEGER,		"8"					},
@@ -63,17 +64,16 @@ configvalue_t config[]={
 	{	"GPS",				"InitialBaudRate",	(void *)&initial_baud,				CFGINTEGER,		"9600"				},
 	{	"GPS",				"FinalBaudRate",	(void *)&final_baud,				CFGINTEGER,		"9600"				},
 	{	"GPS",				"FixRate",			(void *)&fix_rate,					CFGINTEGER,		"1"					},
-	{	"Barometer",		"Enable",			(void *)&baro_enable,				CFGINTEGER,		"1"					},
+	{	"Barometer",		"Enable",			(void *)&baro_enable,				CFGBOOL,		"1"					},
 	{	"Barometer",		"Type",				(void *)baro_type,					CFGSTRING,		"BME280"			},
 	{	"Barometer",		"MeasurementRate",	(void *)&baro_rate,					CFGINTEGER,		"10"				},
-	{	"Barometer",		"GPSSync",			(void *)&baro_gps_sync,				CFGINTEGER,		"1"					},
-	{	"Accelerometer",	"Enable",			(void *)&acc_enable,				CFGINTEGER,		"1"					},
+	{	"Accelerometer",	"Enable",			(void *)&acc_enable,				CFGBOOL,		"1"					},
 	{	"Accelerometer",	"Type",				(void *)acc_type,					CFGSTRING,		"MPU6050"			},
-	{	"Accelerometer",	"MeasurementRate",	(void *)&acc_rate,					CFGINTEGER,		"10"				},
-	{	"Gyro",				"Enable",			(void *)&gyro_enable,				CFGINTEGER,		"1"					},
+	{	"Accelerometer",	"MeasurementRate",	(void *)&accel_rate,				CFGINTEGER,		"10"				},
+	{	"Gyro",				"Enable",			(void *)&gyro_enable,				CFGBOOL,		"1"					},
 	{	"Gyro",				"Type",				(void *)gyro_type,					CFGSTRING,		"MPU6050"			},
 	{	"Gyro",				"MeasurementRate",	(void *)&gyro_rate,					CFGINTEGER,		"10"				},
-	{	"Magnetometer",		"Enable",			(void *)&mag_enable,				CFGINTEGER,		"1"					},
+	{	"Magnetometer",		"Enable",			(void *)&mag_enable,				CFGBOOL,		"1"					},
 	{	"Magnetometer",		"Type",				(void *)mag_type,					CFGSTRING,		"None"				},
 	{	"Magnetometer",		"MeasurementRate",	(void *)&mag_rate,					CFGINTEGER,		"10"				},
 	{	"Logging",			"Level",			(void *)&log_level,					CFGINTEGER,		"1"					},
@@ -204,6 +204,18 @@ int ReadConfigFileSPIFFS(void)
 				temp.fromString(buffer);
 				*((IPAddress *)config[cnt].variable)=temp;
 			}
+			else if(config[cnt].type==CFGBOOL)		{
+#if 0
+														Serial.print("Got boolean in section ");
+														Serial.print(config[cnt].section);
+														Serial.print(" with tag ");
+														Serial.print(config[cnt].tag);
+														Serial.print(" and value ");
+														Serial.println(buffer);
+#endif
+																
+														if(atoi(buffer)==0)	*((bool *)config[cnt].variable)=false;
+														else				*((bool *)config[cnt].variable)=true;	}
 			else if(config[cnt].type==CFGINTEGER)	{	*((int *)config[cnt].variable)=atoi(buffer);				}
 			else if(config[cnt].type==CFGFLOAT)		{	*((double *)config[cnt].variable)=atof(buffer);				}
 			else									{	Serial.println("Unknown data type requested ...");			}

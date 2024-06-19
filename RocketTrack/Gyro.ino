@@ -5,10 +5,11 @@
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 
-int gyro_enable=1;
+bool gyro_enable=false;
+bool gyro_trigger=false;
 
 char gyro_type[32]="None";
-int gyro_type_no=0;
+int gyro_type_num=0;
 int last_gyro_time=0;
 int gyro_period=100;
 int gyro_rate=10;
@@ -37,7 +38,7 @@ int SetupGyro(void)
 		
 		Serial.println("MPU6050 gyro configured\r\n");
 		
-		gyro_type_no=GYRO_MPU6050;
+		gyro_type_num=GYRO_MPU6050;
 		gyro_enable=1;
 	}
 	else if(strstr(gyro_type,"L3GD20")!=NULL)
@@ -55,7 +56,7 @@ int SetupGyro(void)
 		
 		DisplayGyroDetails();
 		
-		gyro_type_no=GYRO_L3GD20;
+		gyro_type_num=GYRO_L3GD20;
 		gyro_enable=1;
 	}
 	else
@@ -64,9 +65,44 @@ int SetupGyro(void)
 		gyro_enable=0;
 	}
 	
+	gyro_period=1000/gyro_rate;
+	
+#ifdef USE_FREERTOS	
+	xTaskCreatePinnedToCore(PollGyro,"Gyro Task",2048,NULL,2,NULL,0);
+//	xTaskCreate(PollGyro,"Gyro Task",2048,NULL,2,NULL);
+#endif
+	
 	return(0);
 }
 
+#ifdef USE_FREERTOS	
+void PollGyro(void *pvParameters)
+{
+	delay(1000);
+	
+	while(1)
+	{
+		if(gyro_enable)
+		{
+			if(sync_sampling)
+			{
+				if(gyro_trigger)
+				{
+					ReadGyro(&ss.gyro_x,&ss.gyro_y,&ss.gyro_z);
+					gyro_trigger=false;
+				}
+			}
+				ReadGyro(&ss.gyro_x,&ss.gyro_y,&ss.gyro_z);
+		}
+		else
+		{
+			ss.gyro_x=0.0f;	ss.gyro_y=0.0f;	ss.gyro_z=0.0f;
+		}
+		
+		delay(gyro_period);
+	}
+}
+#else
 void PollGyro(void)
 {
 	if(gyro_enable)
@@ -82,9 +118,12 @@ void PollGyro(void)
 		ss.gyro_x=0.0f;	ss.gyro_y=0.0f;	ss.gyro_z=0.0f;
 	}
 }
+#endif
 
 void ReadGyro(float *gyro_x,float *gyro_y,float *gyro_z)
 {
+	Serial.println("\t\t\tSampling the Gyro");
+	
 	sensors_event_t g;
 	gyro.getEvent(&g);
 	

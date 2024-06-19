@@ -3,9 +3,11 @@
 #include "Barometer.h"
 #include "GPS.h"
 #include "Gyro.h"
+#include "HardwareAbstraction.h"
 #include "Magnetometer.h"
 #include "Packetisation.h"
 #include "SensorState.h"
+
 
 #include <Adafruit_GPS.h>
 
@@ -35,7 +37,7 @@ int gps_type_num=GPS_NMEA;
 	
 	#define GPSSerialPort gpsi2c
 	
-	#include "MTK_GPS.h"
+//	#include "MTK_GPS.h"
 //	MTK_GPS gps(GPSSerialPort);
 
 #elif BOARD_FEATHER
@@ -62,62 +64,7 @@ int fix_rate;
 
 #define MAX_CHANNELS 50
 
-// Globals
-byte RequiredFlightMode=0;
-byte GlonassMode=0;
-byte RequiredPowerMode=-1;
-byte LastCommand1=0;
-byte LastCommand2=0;
-byte HaveHadALock=0;
-
-bool gps_live_mode=0;
-
-// these are all unpacked from UBX messages
-
-// from NAV-STATUS
-uint32_t iTOW=0;
-uint8_t gpsFix=0;
-uint8_t flags=0;
-uint8_t fixStat=0;
-uint8_t flags2=0;
-uint32_t ttff=0;
-uint32_t msss=0;
-
-// from NAV-SVINFO
-uint8_t beaconnumCh=0;
-uint8_t globalFlags=0;
-uint16_t reserved2=0;
-
-uint8_t chn[MAX_CHANNELS];
-uint8_t svid[MAX_CHANNELS];
-uint8_t svflags[MAX_CHANNELS];
-uint8_t quality[MAX_CHANNELS];
-uint8_t cno[MAX_CHANNELS];
-int8_t elev[MAX_CHANNELS];
-int16_t azim[MAX_CHANNELS];
-int32_t prRes[MAX_CHANNELS];
-
-uint8_t beaconnumSats=0;
-
-// from NAV-POSLLH
-//int32_t gps_lon=0;
-//int32_t gps_lat=0;
-//int32_t gps_height=0;
-//int32_t gps_hMSL=0;
-//int32_t max_beaconhMSL=0;
-//uint32_t gps_hAcc=0;
-//uint32_t gps_vAcc=0;
-
-//uint8_t gps_hAccValue=0;
-
-// from NAV-TIMEUTC
-
-uint16_t beaconyear;
-uint8_t beaconmonth;
-uint8_t beaconday;
-uint8_t beaconhour;
-uint8_t beaconmin;
-uint8_t beaconsec;
+bool gps_live_mode=true;
 
 int SetupGPS(void)
 {
@@ -137,6 +84,9 @@ int SetupGPS(void)
 #elif ARDUINO_TTGO_LoRa32_v21new
 //	GPSSerialPort.begin(initial_baud,EspSoftwareSerial::SWSERIAL_8N1,GPS_RXD,GPS_TXD,false,95,11);
 
+	Serial.println("Setting up for I2C GPS at address 0x10");
+
+//	GPSSerialPort.begin(0x10);
 	GPSSerialPort.begin(0x10);
 	
 #elif BOARD_FEATHER
@@ -175,6 +125,13 @@ int SetupGPS(void)
 	
 	SetupGPSMessages();
 
+#ifdef USE_FREERTOS
+	xTaskCreatePinnedToCore(GPSReceiveTask,"GPS Inpur Task",2048,NULL,2,NULL,0);
+
+//	xTaskCreate(GPSReceiveTask,"GPS Inpur Task",2048,NULL,2,NULL);
+//	xTaskCreate(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL);
+#endif
+	
 	return(0);
 }
 
@@ -220,131 +177,60 @@ void SetupGPSMessages(void)
 	}
 }
 
+#ifdef USE_FREERTOS
+void GPSReceiveTask(void *pvParameters)
+{
+	char rxbyte;
+
+	while(1)
+	{
+//		xSemaphoreTake(i2c_mutex,portMAX_DELAY);
+		while(GPSSerialPort.available())
+		{
+			rxbyte=GPSSerialPort.read();
+			
+			// send it via a a message queue to the gps parser
+			
+			
+			
+			
+			
+					
+			if(gps_live_mode)
+				Serial.write(rxbyte);
+		}
+
+//		xSemaphoreGive(i2c_mutex);
+		delay(1);
+	}
+}
+
+void GPSParserTask(void *pvParameters)
+{
+	while(1)
+	{
+	
+	
+		delay(10);
+	}
+}
+#else
 void PollGPS(void)
 {
-//	static char gpsbuffer[256];
-//	static int bufferptr=0;
 	char rxbyte;
 	
-#if GPS_PASSTHROUGH
-	if(GPSSerialPort.available())	{	rxbyte=GPSSerialPort.read();	Serial.write(rxbyte);			}
-	if(Serial.available())			{	rxbyte=Serial.read();			GPSSerialPort.write(rxbyte);	}
-#else
-
-//	while(GPSSerialPort.available())
 	if(GPSSerialPort.available())
 	{
-		rxbyte=GPSSerialPort.read();
-		
-//		gpsbuffer[bufferptr++]=rxbyte;
-//		if(bufferptr>=sizeof(gpsbuffer))	bufferptr=0;
+		char rxbyte=GPSSerialPort.read();
 		
 		if(gps_live_mode)
 			Serial.write(rxbyte);
-
-//		if(gpsparser.process(rxbyte))
-//		{
-//			Serial.println(gpsparser.getSentence());
-//		}
 	}
-
-#if 0		
-		if(		(gps_type_num==GPS_NMEA)
-			||	(gps_type_num==GPS_MTK333x)	)
-		{
-			if(gpsparser.process(rxbyte))
-			{
-#if 0
-				Serial.println(gpsbuffer);
-				memset(gpsbuffer,0,sizeof(gpsbuffer));
-#endif
-				
-				Serial.println(gpsparser.getSentence());
-				
-				if(strncmp(gpsparser.getMessageID(),"GGA",3)==0)
-				{
-					if(sync_sampling)
-					{
-						// sample all the sensor at the same time as the GGA message is received
-
-						int starttime=micros();
-
-//						trigger_baro=true;
-//						trigger_accel=true;
-//						trigger_gyro=true;
-//						trigger_mag=true;
-						
-#if 0
-						ss.baro_altitude=ReadAltitude();
-						ss.baro_pressure=ReadPressure();
-						ss.baro_temperature=ReadTemperature();
-						ss.baro_humidity=ReadHumidity();
-#endif
-#if 0
-						ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
-#endif
-#if 0
-						ReadGyro(&ss.gyro_x,&ss.gyro_y,&ss.gyro_z);
-#endif
-#if 0
-						ReadMagnetometer(&ss.mag_x,&ss.mag_y,&ss.mag_z);
-#endif
-						Serial.println("Log ...");
-#if 0
-						char buffer[256];
-						sprintf(buffer,"AccX: %.2f, AccY: %.2f, AccZ: %.2f, GyroX: %.2f, GyroY: %.2f, GyroZ: %.2f, MagX: %.2f, MagY: %.2f, MagZ: %.2f, Alt: %.2f, Pres: %.2f, Temp: %.2f, Hum: %.2f",
-									ss.accel_x,ss.accel_y,ss.accel_z,
-									ss.gyro_x,ss.gyro_y,ss.gyro_z,
-									ss.mag_x,ss.mag_y,ss.mag_z,
-									ss.baro_altitude,ss.baro_pressure,ss.baro_temperature,ss.baro_humidity);
-						
-						Serial.println(buffer);
-#endif
-
-						Serial.print("Duration: ");	Serial.print(micros()-starttime);	Serial.println(" uS");
-					}
-				}
-
-				if(strncmp(gpsparser.getMessageID(),"RMC",3)==0)
-				{	
-	#if 0
-					// Output GPS information from previous second
-					Serial.print("Valid fix: ");		Serial.println(gpsparser.isValid() ? "yes" : "no");
-
-					Serial.print("Nav. system: ");
-					if(gpsparser.getNavSystem())		Serial.println(gpsparser.getNavSystem());
-					else								Serial.println("none");
-
-					Serial.print("Num. satellites: ");	Serial.println(gpsparser.getNumSatellites());
-					Serial.print("HDOP: ");				Serial.println(gpsparser.getHDOP()/10., 1);
-
-					Serial.print("Date/time: ");		Serial.print(gpsparser.getYear());		Serial.print('-');	Serial.print(int(gpsparser.getMonth()));	Serial.print('-');	Serial.print(int(gpsparser.getDay()));
-					Serial.print('T');					Serial.print(int(gpsparser.getHour()));	Serial.print(':');	Serial.print(int(gpsparser.getMinute()));	Serial.print(':');	Serial.println(int(gpsparser.getSecond()));
-
-					long latitude_mdeg = gpsparser.getLatitude();
-					long longitude_mdeg = gpsparser.getLongitude();
-
-					Serial.print("Latitude (deg): ");	Serial.println(latitude_mdeg / 1000000., 6);
-					Serial.print("Longitude (deg): ");	Serial.println(longitude_mdeg / 1000000., 6);
-
-					long alt;
-					
-					Serial.print("Altitude (m): ");
-					if(gpsparser.getAltitude(alt))		Serial.println(alt / 1000., 3);
-					else								Serial.println("not available");
-
-					Serial.print("Speed: ");			Serial.println(gpsparser.getSpeed() / 1000., 3);
-					Serial.print("Course: ");			Serial.println(gpsparser.getCourse() / 1000., 3);
-
-					Serial.println("-----------------------");
-	#endif
-				}
-			}
-		}
-	}
-#endif
-#endif
 }
+#endif
+
+
+
 
 int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 {
@@ -361,16 +247,17 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	switch(cmd[1]|0x20)
 	{
 		case 'p':	// position fix
-					Serial.printf("Lat = %.6f, Lon = %.6f, ",beaconlat/1e7,beaconlon/1e7);
-					Serial.printf("height = %.1f\r\n",beaconheight/1e3);
+					Serial.printf("Lat = %.6f, Lon = %.6f, ",ss.gps_latitude,ss.gps_longitude);
+					Serial.printf("height = %.1f\r\n",ss.gps_altitude);
 					break;
 		
 		case 'f':	// fix status
-					if(gpsFix==0x00)		Serial.println("No Fix");
-					else if(gpsFix==0x02)	Serial.println("2D Fix");
-					else if(gpsFix==0x03)	Serial.println("3D Fix");
+					if(ss.gps_fix==0x00)		Serial.println("No Fix");
+					else if(ss.gps_fix==0x02)	Serial.println("2D Fix");
+					else if(ss.gps_fix==0x03)	Serial.println("3D Fix");
 					break;
-		
+
+#if 0		
 		case 's':	// satellite info
 					Serial.println("Chan\tPRN\tElev\tAzim\tC/No");
 					for(cnt=0;cnt<beaconnumCh;cnt++)
@@ -379,7 +266,8 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					}
 					
 					break;
-		
+#endif
+				
 		case 'l':	// live mode toggle
 					gps_live_mode=!gps_live_mode;
 					break;

@@ -4,19 +4,19 @@
 extern bool baro_enable;
 extern char baro_type[];
 extern int baro_rate;
-extern int baro_gps_sync;
 extern bool baro_trigger;
 
 int SetupBarometer(void);
 void PollBarometer(void);
 
-float ReadAltitude(void);
-float ReadPressure(void);
-float ReadTemperature(void);
-float ReadHumidity(void);
-
-
 int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr);
+
+#if 0
+	float ReadAltitude(void);
+	float ReadPressure(void);
+	float ReadTemperature(void);
+	float ReadHumidity(void);
+#endif
 
 enum
 {
