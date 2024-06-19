@@ -9,7 +9,7 @@
 
 int acc_enable=1;
 char acc_type[32]="None";
-int acc_type_no=ACCELEROMETER_NONE;
+int acc_type_num=ACCELEROMETER_NONE;
 int last_accel_time=0;
 int accel_period=100;
 int acc_rate=10;
@@ -64,7 +64,7 @@ int SetupAccelerometer(void)
 		mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 		
 		Serial.println("MPU6050 accelerometer configured");
-		acc_type_no=ACCELEROMETER_MPU6050;
+		acc_type_num=ACCELEROMETER_MPU6050;
 		acc_enable=1;
 	}
 	else if(strstr(acc_type,"LSM303DLHC")!=NULL)
@@ -83,13 +83,13 @@ int SetupAccelerometer(void)
 	
 		DisplayAccelerometerDetails();
 	
-		acc_type_no=ACCELEROMETER_LSM303DLHC;
+		acc_type_num=ACCELEROMETER_LSM303DLHC;
 		acc_enable=1;
 	}
 	else if(strstr(acc_type,"ADXL345")!=NULL)
 	{
 		Serial.print("ADXL345 accelerometer configured\r\n");
-		acc_type_no=ACCELEROMETER_ADXL345;
+		acc_type_num=ACCELEROMETER_ADXL345;
 		acc_enable=1;
 	}
 	else
@@ -97,14 +97,10 @@ int SetupAccelerometer(void)
 		Serial.println("Accelerometer mis-configured, disabling");
 		acc_enable=0;
 	}
-	
-	xTaskCreate(
-					PollAccelerometer,"Accel Task",
-					2048,
-					NULL,
-					2,
-					NULL
-				);
+
+#ifdef USE_FREERTOS	
+	xTaskCreate(PollAccelerometer,"Accel Task",2048,NULL,2,NULL);
+#endif
 	
 	return(0);
 }
@@ -115,7 +111,7 @@ void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
 	sensors_event_t g;
 	sensors_event_t temp;
 			
-	switch(acc_type_no)
+	switch(acc_type_num)
 	{
 		case ACCELEROMETER_NONE:		Serial.print("Accelerometer misconfigured, disabling\r\n");
 										acc_enable=0;
