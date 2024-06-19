@@ -16,7 +16,7 @@ bool baro_trigger=false;
 int baro_gps_sync=0;
 
 char baro_type[32]="Generic";
-int baro_type_no=BAROMETER_NONE;
+int baro_type_num=BAROMETER_NONE;
 
 int baro_rate=10;
 int baro_period=100;
@@ -60,7 +60,7 @@ int SetupBarometer(void)
 
 		DisplayBarometerDetails();
 		
-		baro_type_no=BAROMETER_BMP085;
+		baro_type_num=BAROMETER_BMP085;
 		baro_enable=true;
 	}
 	else
@@ -76,18 +76,47 @@ int SetupBarometer(void)
 	
 	Serial.println("Barometer configured\n");
 
-	last_baro_time=millis_1pps();
+#ifdef USE_FREERTOS	
+	xTaskCreate(PollAccelerometer,"Accelerometer Task",2048,NULL,2,NULL);
+#endif
 	
 	return(0);
 }
 
+#ifdef USE_FREERTOS
+void PollBarometer(void *pvParameters)
+{
+	while(1)
+	{
+		if(baro_enable)
+		{
+			if(sync_sampling)
+			{
+				if(trigger_accel)
+				{
+					ReadBarometer();
+					trigger_accel=false;
+				}
+			}
+			else
+				ReadBarometer();
+				
+			delay(baro_period);
+		}
+		else
+		{
+			ss.baro_altitude=0.0f;	ss.baro_pressure=0.0f;	ss.baro_temperature=0.0f;	ss.baro_humidity=0.0f;
+		}
+	}
+}
+#else
 void PollBarometer(void)
 {
 	if(baro_enable)
 	{
 		if(millis()>(last_baro_time+baro_period))
 		{
-			SampleBarometer();
+			ReadBarometer();
 			last_baro_time=millis();
 		}
 	}
@@ -96,8 +125,9 @@ void PollBarometer(void)
 		ss.baro_altitude=0.0f;	ss.baro_pressure=0.0f;	ss.baro_temperature=0.0f;	ss.baro_humidity=0.0f;
 	}
 }
+#endif
 
-void SampleBarometer(void)
+void ReadBarometer(void)
 {
 	ss.baro_altitude=ReadAltitude();
 	ss.baro_pressure=ReadPressure();
@@ -183,23 +213,23 @@ int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 	switch(cmd[1]|0x20)
 	{
-		case 'a':	SampleBarometer();
+		case 'a':	ReadBarometer();
 					Serial.print("Altitude: ");		Serial.print(ss.baro_altitude);		Serial.print(" m\r\n");
 					break;
 		
-		case 'p':	SampleBarometer();
+		case 'p':	ReadBarometer();
 					Serial.print("Pressure: ");		Serial.print(ss.baro_pressure);		Serial.print(" Pa\r\n");
 					break;
 		
-		case 't':	SampleBarometer();
+		case 't':	ReadBarometer();
 					Serial.print("Temperature: ");	Serial.print(ss.baro_temperature);	Serial.print(" *C\r\n");
 					break;
 		
-		case 'h':	SampleBarometer();
+		case 'h':	ReadBarometer();
 					Serial.print("Humidity: ");		Serial.print(ss.baro_humidity);		Serial.print(" %\r\n");
 					break;
 		
-		case 'r':	SampleBarometer();
+		case 'r':	ReadBarometer();
 					Serial.print("Altitude: ");		Serial.print(ss.baro_altitude);		Serial.print(" m\r\n");
 					Serial.print("Pressure: ");		Serial.print(ss.baro_pressure);		Serial.print(" Pa\r\n");
 					Serial.print("Temperature: ");	Serial.print(ss.baro_temperature);	Serial.print(" *C\r\n");
@@ -224,6 +254,7 @@ int BarometerCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 
 void DisplayBarometerDetails(void)
 {
+#if (DEBUG>0)
 	sensor_t sensor;
 	bmp.getSensor(&sensor);
 	
@@ -236,5 +267,6 @@ void DisplayBarometerDetails(void)
 	Serial.print  ("Resolution:   "); Serial.print(sensor.resolution); Serial.println(" hPa");  
 	Serial.println("------------------------------------");
 	Serial.println("");
+#endif
 }
 
