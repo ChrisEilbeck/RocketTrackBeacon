@@ -99,7 +99,7 @@ int SetupAccelerometer(void)
 	}
 
 #ifdef USE_FREERTOS	
-	xTaskCreate(PollAccelerometer,"Accel Task",2048,NULL,2,NULL);
+	xTaskCreate(PollAccelerometer,"Accelerometer Task",2048,NULL,2,NULL);
 #endif
 	
 	return(0);
