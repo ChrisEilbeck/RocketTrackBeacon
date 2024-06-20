@@ -11,17 +11,29 @@
 
 #include <Adafruit_GPS.h>
 
-#include <TinyGPS.h>
-#include <MicroNMEA.h>
+//#include <TinyGPS.h>
+#include <TinyGPSPlus.h>
+//#include <MicroNMEA.h>
 
 //MicroNMEA library structures
-char gpsparserBuffer[100];
-MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
+//char gpsparserBuffer[100];
+//MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
 
 //TinyGPS gpsparser;
 
+TinyGPSPlus gpsparser;
+
 bool gps_enabled=true;
 int gps_type_num=GPS_NMEA;
+
+#define MAX_MESSAGE_LENGTH 80
+
+QueueHandle_t QueueHandle;
+const int QueueElementSize=8;
+typedef struct {
+	uint8_t count;
+	char rxbytes[MAX_MESSAGE_LENGTH+1];
+} message_t;
 
 // pick up the right serial port to use depending on which board we're running on
 
@@ -64,7 +76,7 @@ int fix_rate;
 
 #define MAX_CHANNELS 50
 
-bool gps_live_mode=true;
+bool gps_live_mode=false;
 
 int SetupGPS(void)
 {
@@ -126,7 +138,21 @@ int SetupGPS(void)
 	SetupGPSMessages();
 
 #ifdef USE_FREERTOS
-	xTaskCreatePinnedToCore(GPSReceiveTask,"GPS Inpur Task",2048,NULL,2,NULL,0);
+	// Create the queue which will have <QueueElementSize> number of elements, each of size `message_t` and pass the address to <QueueHandle>.
+	QueueHandle=xQueueCreate(QueueElementSize,sizeof(message_t));
+
+	// Check if the queue was successfully created
+	if(QueueHandle==NULL)
+	{
+    	Serial.println("Queue could not be created. Halt.");
+    	while(1)
+    	{
+    		delay(1000);  // Halt at this point as is not possible to continue
+		}
+	}
+	
+	xTaskCreatePinnedToCore(GPSReceiveTask,"GPS Input Task",20480,NULL,2,NULL,0);
+	xTaskCreatePinnedToCore(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL,0);
 
 //	xTaskCreate(GPSReceiveTask,"GPS Inpur Task",2048,NULL,2,NULL);
 //	xTaskCreate(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL);
@@ -185,19 +211,111 @@ void GPSReceiveTask(void *pvParameters)
 	while(1)
 	{
 //		xSemaphoreTake(i2c_mutex,portMAX_DELAY);
+
+//		int bytecount=0;
+//		message_t message;
+		
 		while(GPSSerialPort.available())
 		{
 			rxbyte=GPSSerialPort.read();
 			
-			// send it via a a message queue to the gps parser
-			
-			
-			
-			
-			
-					
 			if(gps_live_mode)
 				Serial.write(rxbyte);
+
+//			if(gpsparser.process(rxbyte))
+//			{
+//				Serial.println(gpsparser.getSentence());
+//			}
+
+			gpsparser.encode(rxbyte);
+					
+			if(rxbyte=='\n')
+			{
+				Serial.print(F("Location: ")); 
+				if(gpsparser.location.isValid())
+				{
+					Serial.print(gpsparser.location.lat(), 6);
+					Serial.print(F(","));
+					Serial.print(gpsparser.location.lng(), 6);
+				}
+				else
+				{
+					Serial.print(F("INVALID"));
+				}
+
+				Serial.print(F("		Date/Time: "));
+				if(gpsparser.date.isValid())
+				{
+					Serial.print(gpsparser.date.month());
+					Serial.print(F("/"));
+					Serial.print(gpsparser.date.day());
+					Serial.print(F("/"));
+					Serial.print(gpsparser.date.year());
+				}
+				else
+				{
+					Serial.print(F("INVALID"));
+				}
+
+				Serial.print(F(" "));
+				if(gpsparser.time.isValid())
+				{
+					if(gpsparser.time.hour() < 10) Serial.print(F("0"));
+					Serial.print(gpsparser.time.hour());
+					Serial.print(F(":"));
+					if(gpsparser.time.minute() < 10) Serial.print(F("0"));
+					Serial.print(gpsparser.time.minute());
+					Serial.print(F(":"));
+					if(gpsparser.time.second() < 10) Serial.print(F("0"));
+					Serial.print(gpsparser.time.second());
+					Serial.print(F("."));
+					if(gpsparser.time.centisecond() < 10) Serial.print(F("0"));
+					Serial.print(gpsparser.time.centisecond());
+				}
+				else
+				{
+					Serial.print(F("INVALID"));
+				}
+				
+				Serial.println("");
+			}
+
+			// send it via a a message queue to the gps parser	
+//			message.rxbytes[bytecount++]=rxbyte;
+			
+//			if(rxbyte=='\n')
+//			{
+//				message.count=bytecount+1;
+//				message.rxbytes[bytecount]=0;
+							
+//				Serial.print("Sending ");
+//				Serial.print(message.count);
+//				Serial.print(" bytes: ");
+//				Serial.println((char *)message.rxbytes);
+
+//				break;
+
+#if 0							
+				// Check if the queue exists AND if there is any free space in the queue
+				if(QueueHandle!=NULL&&uxQueueSpacesAvailable(QueueHandle)>0)
+				{
+					// The line needs to be passed as pointer to void.
+					// The last parameter states how many milliseconds should wait (keep trying to send) if is not possible to send right away.
+					// When the wait parameter is 0 it will not wait and if the send is not possible the function will return errQUEUE_FULL
+					int ret=xQueueSend(QueueHandle,(void *)&message,0);
+					if(ret==pdTRUE)
+					{
+						// The message was successfully sent.
+					}
+					else if(ret==errQUEUE_FULL)
+					{
+						// Since we are checking uxQueueSpacesAvailable this should not occur, however if more than one task should
+						//   write into the same queue it can fill-up between the test and actual send attempt
+						Serial.println("The `TaskReadFromSerial` was unable to send data into the Queue");
+					}  // Queue send check
+				}  // Queue sanity check
+#endif
+//			}
 		}
 
 //		xSemaphoreGive(i2c_mutex);
@@ -207,11 +325,27 @@ void GPSReceiveTask(void *pvParameters)
 
 void GPSParserTask(void *pvParameters)
 {
+	
 	while(1)
 	{
-	
-	
-		delay(10);
+		// One approach would be to poll the function (uxQueueMessagesWaiting(QueueHandle) and call delay if nothing is waiting.
+		// The other approach is to use infinite time to wait defined by constant `portMAX_DELAY`:
+		if(QueueHandle!=NULL)	// Sanity check just to make sure the queue actually exists
+		{
+			message_t message;
+			int ret=xQueueReceive(QueueHandle,&message,portMAX_DELAY);
+			if(ret==pdPASS)
+      		{
+      			// The message was successfully received - send it back to Serial port and "Echo: "
+				Serial.print(message.rxbytes);
+			}
+			else if(ret==pdFALSE)
+			{
+				Serial.println("The `TaskWriteToSerial` was unable to receive data from the Queue");
+			}
+		}  // Sanity check
+		
+		delay(1);
 	}
 }
 #else
@@ -286,3 +420,4 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 	return(retval);
 }
+

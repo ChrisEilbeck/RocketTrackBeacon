@@ -28,7 +28,7 @@ int SetupLEDs(void)
 #ifdef USE_FREERTOS
 	xTaskCreate(
 					PollLEDs,"LED Task",
-					2048,
+					20480,
 					NULL,
 					2,						// Medium priority
 					NULL

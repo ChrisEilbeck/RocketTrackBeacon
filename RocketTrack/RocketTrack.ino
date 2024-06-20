@@ -126,10 +126,10 @@ void setup()
 #endif
 #endif
 
-//	acc_enable=false;
+	acc_enable=false;
 	baro_enable=false;
-//	gyro_enable=false;
-//	mag_enable=false;
+	gyro_enable=false;
+	mag_enable=false;
 	
 	if(acc_enable&&SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");	acc_enable=false;		}
 	if(gyro_enable&&SetupGyro())			{	Serial.println("Gyro setup failed, disabling ...");				gyro_enable=false;		}
@@ -148,7 +148,7 @@ void setup()
 
 //	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
 
-	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=false;		}
+//	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=false;		}
 
 #if 0
 	// optional peripherals
