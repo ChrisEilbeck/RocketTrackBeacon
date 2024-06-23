@@ -94,22 +94,26 @@ void PollBarometer(void *pvParameters)
 		{
 			if(sync_sampling)
 			{
-//				if(baro_trigger)
+				if(baro_trigger)
 				{
 					ReadBarometer();
 					baro_trigger=false;
-					accel_trigger=true;
+//					accel_trigger=true;
 				}
+				else
+					delay(1);
 			}
 			else
+			{
 				ReadBarometer();		
+				delay(baro_period);
+			}
 		}
 		else
 		{
 			ss.baro_altitude=0.0f;	ss.baro_pressure=0.0f;	ss.baro_temperature=0.0f;	ss.baro_humidity=0.0f;
-		}
-		
-		delay(baro_period);
+			delay(baro_period);
+		}		
 	}
 }
 #else

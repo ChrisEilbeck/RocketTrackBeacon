@@ -212,8 +212,8 @@ void SetupGPSMessages(void)
 void GPSReceiveTask(void *pvParameters)
 {
 	char rxbyte;
-//	char buffer[256];
-//	int bufferptr=0;
+	char buffer[256];
+	int bufferptr=0;
 	
 	while(1)
 	{
@@ -229,8 +229,31 @@ void GPSReceiveTask(void *pvParameters)
 
 			xSemaphoreGive(i2c_mutex);
 			
-//			if(bufferptr<=sizeof(buffer))
-//				buffer[bufferptr++]=rxbyte;
+			if(bufferptr<=sizeof(buffer))
+			{
+				buffer[bufferptr++]=rxbyte;
+				
+				if(rxbyte=='\n')
+				{
+					buffer[bufferptr]=0;
+//					Serial.println(buffer);
+
+//					if(strncmp(buffer,"$GNGGA",6)==0)
+					{
+//						Serial.println("ping!");
+						baro_trigger=true;
+						delay(1);
+					}
+					
+//					memset(buffer,0,sizeof(buffer));
+					bufferptr=0;
+				}
+			}
+			else
+			{
+//				memset(buffer,0,sizeof(buffer));
+				bufferptr=0;
+			}	
 			
 //			if(gps_live_mode)
 				Serial.write(rxbyte);
