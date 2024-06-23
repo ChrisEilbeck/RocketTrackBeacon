@@ -115,7 +115,8 @@ int SetupAccelerometer(void)
 
 void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
 {
-	Serial.println("\t\tSampling the Accelerometer");
+//	Serial.println("\t\tSampling the Accelerometer");
+	Serial.println("\tA-");
 
 	sensors_event_t a;
 	sensors_event_t g;

@@ -92,20 +92,23 @@ void PollBarometer(void *pvParameters)
 	{
 		if(baro_enable)
 		{
+#if 1
 			if(sync_sampling)
 			{
 				if(baro_trigger)
 				{
 					ReadBarometer();
 					baro_trigger=false;
-//					accel_trigger=true;
+					accel_trigger=true;
 				}
 				else
 					delay(1);
 			}
 			else
+#endif
 			{
 				ReadBarometer();		
+				accel_trigger=true;
 				delay(baro_period);
 			}
 		}
@@ -136,7 +139,8 @@ void PollBarometer(void)
 
 void ReadBarometer(void)
 {
-	Serial.println("\tSampling the Barometer");
+//	Serial.println("\n\tSampling the Barometer");
+	Serial.println("B-");
 
 	xSemaphoreTake(i2c_mutex,portMAX_DELAY);
 

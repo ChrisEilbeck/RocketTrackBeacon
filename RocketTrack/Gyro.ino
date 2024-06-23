@@ -128,7 +128,8 @@ void PollGyro(void)
 
 void ReadGyro(float *gyro_x,float *gyro_y,float *gyro_z)
 {
-	Serial.println("\t\t\tSampling the Gyro");
+//	Serial.println("\t\t\tSampling the Gyro");
+	Serial.println("\t\tG-");
 	
 	xSemaphoreTake(i2c_mutex,portMAX_DELAY);
 

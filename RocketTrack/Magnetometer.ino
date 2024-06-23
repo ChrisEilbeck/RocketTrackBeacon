@@ -65,7 +65,8 @@ int SetupMagnetometer(void)
 
 void ReadMagnetometer(float *mag_x,float *mag_y,float *mag_z)
 {
-	Serial.println("\t\t\t\tSampling the Magnetometer");
+//	Serial.println("\t\t\t\tSampling the Magnetometer");
+	Serial.println("\t\t\tM ...");
 
 	xSemaphoreTake(i2c_mutex,portMAX_DELAY);
 

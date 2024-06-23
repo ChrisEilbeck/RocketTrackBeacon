@@ -228,7 +228,109 @@ void GPSReceiveTask(void *pvParameters)
 //			rxbyte=gpsparser.read();
 
 			xSemaphoreGive(i2c_mutex);
+
+//			if(gps_live_mode)
+				Serial.write(rxbyte);
+
+			static int state=0;
 			
+			switch(state)
+			{
+				case 0:		if(rxbyte=='G')	state=1;
+							break;
+				
+				case 1:		state=2;
+							break;
+				
+				case 2:		if(rxbyte=='G')	state=3;
+							else			state=0;
+							break;
+				
+				case 3:		if(rxbyte=='G')	state=4;
+							else			state=0;
+							break;
+				
+				case 4:		if(rxbyte=='A') state=5;
+							else			state=0;
+							break;
+							
+				case 5:		if(rxbyte=='\n')
+							{
+								Serial.println("GxGGA ...");									
+								baro_trigger=true;
+								delay(1);
+							}
+							
+							if(rxbyte=='$')	state=0;
+							break;
+				
+				default:	state=0;
+							break;
+			}
+			
+#if 0
+			if(gpsparser.newNMEAreceived())
+			{
+				char msg[8];
+				strncpy(msg,gpsparser.lastNMEA(),6);
+
+				if(strcmp(msg,"$GNVTG")==0)
+				{
+					Serial.println(msg);					
+					baro_trigger=true;
+					delay(1);
+				}
+				
+				
+				
+				
+#else
+			if(bufferptr<=sizeof(buffer))
+			{
+				buffer[bufferptr++]=rxbyte;
+				
+				char msg[8];
+
+				if(rxbyte=='\n')
+				{
+					
+				
+				
+				
+					buffer[bufferptr]=0;
+#if 0					
+//					Serial.print("\r\n");
+					Serial.print(buffer[1]);
+					Serial.print(buffer[2]);
+					Serial.print(buffer[3]);
+					Serial.print(buffer[4]);
+					Serial.println(buffer[5]);
+					Serial.print("\r\n");
+#endif					
+#if 0
+					if(		(buffer[1]=='G')
+						&&	(buffer[3]=='G')
+						&&	(buffer[4]=='G')
+						&&	(buffer[5]=='A')	)
+					{
+						Serial.println("GGA - Ping!");					
+//						baro_trigger=true;
+						delay(1);
+					}
+#endif
+					
+					memset(buffer,0,sizeof(buffer));
+					bufferptr=0;
+//					Serial.println("\nReset ...");
+				}		
+			}
+			else
+			{
+				memset(buffer,0,sizeof(buffer));
+				bufferptr=0;
+			}
+#endif			
+#if 0			
 			if(bufferptr<=sizeof(buffer))
 			{
 				buffer[bufferptr++]=rxbyte;
@@ -253,10 +355,9 @@ void GPSReceiveTask(void *pvParameters)
 			{
 //				memset(buffer,0,sizeof(buffer));
 				bufferptr=0;
-			}	
+			}
+#endif
 			
-//			if(gps_live_mode)
-				Serial.write(rxbyte);
 
 //			if(gpsparser.process(rxbyte))
 //			{
