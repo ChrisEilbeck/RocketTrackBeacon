@@ -20,8 +20,8 @@
 //char gpsparserBuffer[100];
 //MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
 
-#include <TinyGPSPlus.h>
-TinyGPSPlus gpsparser;
+//#include <TinyGPSPlus.h>
+//TinyGPSPlus gpsparser;
 
 bool gps_enabled=true;
 int gps_type_num=GPS_NMEA;
@@ -267,7 +267,7 @@ void GPSReceiveTask(void *pvParameters)
 							break;
 			}
 
-			gpsparser.encode(rxbyte);
+//			gpsparser.encode(rxbyte);
 			
 //			if(gpsparser.process(rxbyte))
 //			{
@@ -349,14 +349,25 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	switch(cmd[1]|0x20)
 	{
 		case 'p':	// position fix
+				    Serial.print(GPSSerialPort.latitude,6);
+					Serial.print(F(","));
+				    Serial.print(GPSSerialPort.longitude,6);
+		
+#if 0
 					Serial.printf("Lat = %.6f, Lon = %.6f, ",ss.gps_latitude,ss.gps_longitude);
 					Serial.printf("height = %.1f\r\n",ss.gps_altitude);
+#endif
 					break;
 		
 		case 'f':	// fix status
+					Serial.print("Fix: ");		Serial.print((int)GPSSerialPort.fix);
+					Serial.print(" quality: ");	Serial.println((int)GPSSerialPort.fixquality);
+
+#if 0
 					if(ss.gps_fix==0x00)		Serial.println("No Fix");
 					else if(ss.gps_fix==0x02)	Serial.println("2D Fix");
 					else if(ss.gps_fix==0x03)	Serial.println("3D Fix");
+#endif
 					break;
 
 #if 0		
@@ -375,36 +386,40 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					break;
 					
 		case '1':	Serial.println("1Hz NMEA rate");
-//					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+					GPSSerialPort.println(PMTK_SET_NMEA_UPDATE_1HZ);
 					break;
 		
 		case '2':	Serial.println("2Hz NMEA rate");
-//					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_2HZ);
+					GPSSerialPort.println(PMTK_SET_NMEA_UPDATE_2HZ);
 					break;
 		
 		case '5':	Serial.println("5Hz NMEA rate");
-//					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+					GPSSerialPort.println(PMTK_SET_NMEA_UPDATE_5HZ);
+					break;
+		
+		case '0':	Serial.println("10Hz NMEA rate");
+					GPSSerialPort.println(PMTK_SET_NMEA_UPDATE_10HZ);
 					break;
 		
 		case 'g':	Serial.println("GPGGA only");
-//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GGAONLY);
+					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_GGAONLY);
 					break;		
 
 		case 's':	Serial.println("GPGSA only");
-//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GSAONLY);
+					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_GSAONLY);
 					break;		
 		
 
 		case 'n':	Serial.println("All NMEA off");
-//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_OFF);
+					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_OFF);
 					break;
 					
 		case 'm':	Serial.println("GPGSA, GPGGA and GPRMC");
-//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
+					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
 					break;
 		
 		case 'v':	Serial.println("Requesting version");
-//					gpsparser.sendCommand(PMTK_Q_RELEASE);
+					GPSSerialPort.println(PMTK_Q_RELEASE);
 					break;
 		
 		case '?':	Serial.print("GPS Test Harness\r\n================\r\n\n");
