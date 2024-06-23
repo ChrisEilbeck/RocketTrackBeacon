@@ -104,16 +104,20 @@ void PollMagnetometer(void *pvParameters)
 					ReadMagnetometer(&ss.mag_x,&ss.mag_y,&ss.mag_z);
 					mag_trigger=false;
 				}
+				else
+					delay(1);
 			}
 			else
+			{
 				ReadMagnetometer(&ss.mag_x,&ss.mag_y,&ss.mag_z);
+				delay(mag_period);
+			}
 		}
 		else
 		{
 			ss.mag_x=0.0f;	ss.mag_y=0.0f;	ss.mag_z=0.0f;
-		}
-		
-		delay(mag_period);
+			delay(mag_period);
+		}		
 	}
 }
 #else

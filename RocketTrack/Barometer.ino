@@ -49,7 +49,7 @@ int SetupBarometer(void)
 				||	(strstr(baro_type,"BMP085")!=NULL)	)
 	{
 		/* Initialise the sensor */
-		if(!bmp.begin())
+		if(!bmp.begin(BMP085_MODE_STANDARD))
 		{
 			Serial.print("Ooops, no BMP085/BMP180 detected, disabling");
 			baro_enable=false;
@@ -94,10 +94,11 @@ void PollBarometer(void *pvParameters)
 		{
 			if(sync_sampling)
 			{
-				if(baro_trigger)
+//				if(baro_trigger)
 				{
 					ReadBarometer();
 					baro_trigger=false;
+					accel_trigger=true;
 				}
 			}
 			else

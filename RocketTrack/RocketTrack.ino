@@ -126,17 +126,17 @@ void setup()
 #endif
 #endif
 
-	acc_enable=false;
-	baro_enable=false;
-	gyro_enable=false;
-	mag_enable=false;
+//	acc_enable=false;
+//	baro_enable=false;
+//	gyro_enable=false;
+//	mag_enable=false;
 	
 	if(acc_enable&&SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");	acc_enable=false;		}
 	if(gyro_enable&&SetupGyro())			{	Serial.println("Gyro setup failed, disabling ...");				gyro_enable=false;		}
 	if(mag_enable&&SetupMagnetometer())		{	Serial.println("Magnetometer setup failed, disabling ...");		mag_enable=false;		}
 	if(baro_enable&&SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");		baro_enable=false;		}
 	
-	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
+//	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 //	SetupOnePPS();
 
 //	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}

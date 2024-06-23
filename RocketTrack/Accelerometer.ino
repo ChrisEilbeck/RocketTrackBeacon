@@ -168,17 +168,22 @@ void PollAccelerometer(void *pvParameters)
 				{
 					ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
 					accel_trigger=false;
+					gyro_trigger=true;
 				}
+				else
+					delay(1);
 			}
 			else
+			{
 				ReadAccelerometer(&ss.accel_x,&ss.accel_y,&ss.accel_z);
+				delay(accel_period);
+			}
 		}
 		else
 		{
 			ss.accel_x=0.0f;	ss.accel_y=0.0f;	ss.accel_z=0.0f;
+			delay(accel_period);
 		}
-		
-		delay(accel_period);
 	}
 }
 #else

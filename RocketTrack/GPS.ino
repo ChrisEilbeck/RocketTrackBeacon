@@ -11,17 +11,18 @@
 
 #include <Adafruit_GPS.h>
 
-//#include <TinyGPS.h>
-#include <TinyGPSPlus.h>
-//#include <MicroNMEA.h>
+Adafruit_GPS gpsparser(&Wire);
 
+//#include <TinyGPS.h>
+//TinyGPS gpsparser;
+
+//#include <MicroNMEA.h>
 //MicroNMEA library structures
 //char gpsparserBuffer[100];
 //MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
 
-//TinyGPS gpsparser;
-
-TinyGPSPlus gpsparser;
+//#include <TinyGPSPlus.h>
+//TinyGPSPlus gpsparser;
 
 bool gps_enabled=true;
 int gps_type_num=GPS_NMEA;
@@ -84,22 +85,34 @@ int SetupGPS(void)
 	
 	// this could do with some autobauding
 	
+	if(strstr("NMEA",gps_type)!=NULL)			{	gps_type_num=GPS_NMEA;		}
+	else if(strstr("UBLOX",gps_type)!=NULL)		{	gps_type_num=GPS_UBLOX;		}
+	else if(strstr("ublox",gps_type)!=NULL)		{	gps_type_num=GPS_UBLOX;		}
+	else if(strstr("MTK333X",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("mtk333x",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("MTK3333",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("mtk3333",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("MTK3339",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else if(strstr("mtk3339",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
+	else										{	gps_enabled=false;			}
 	
-
-	// this also assumes we're using a u-Blox receiver, not always true
 
 
 
 #if ARDUINO_TBEAM_USE_RADIO_SX1276
+
 	// Pins for T-Beam v0.8 (3 push buttons) and up
 	GPSSerialPort.begin(initial_baud,SERIAL_8N1,34,12);
+
 #elif ARDUINO_TTGO_LoRa32_v21new
-//	GPSSerialPort.begin(initial_baud,EspSoftwareSerial::SWSERIAL_8N1,GPS_RXD,GPS_TXD,false,95,11);
 
-	Serial.println("Setting up for I2C GPS at address 0x10");
-
-//	GPSSerialPort.begin(0x10);
-	GPSSerialPort.begin(0x10);
+	#if 0
+		Serial.println("Setting up for SoftSerial GPS at address");
+		GPSSerialPort.begin(initial_baud,EspSoftwareSerial::SWSERIAL_8N1,GPS_RXD,GPS_TXD,false,95,11);
+	#else
+		Serial.println("Setting up for I2C GPS at address 0x10");
+		GPSSerialPort.begin(0x10);
+	#endif
 	
 #elif BOARD_FEATHER
 	Serial.println("GPS support not present for the Feather board yet, aborting ...");
@@ -108,6 +121,7 @@ int SetupGPS(void)
 	Serial.println("GPS misconfigured, aborting ...");
 	return(1);
 #endif
+
 #if 0
 	Serial.print("\nPassing through the GPS for 10 seconds ...\r\n\n");
 
@@ -123,18 +137,7 @@ int SetupGPS(void)
 
 	Serial.print("\r\n\nDisabling GPS passthrough\r\n\n");
 #endif
-	
-	if(strstr("NMEA",gps_type)!=NULL)			{	gps_type_num=GPS_NMEA;		}
-	else if(strstr("UBLOX",gps_type)!=NULL)		{	gps_type_num=GPS_UBLOX;		}
-	else if(strstr("ublox",gps_type)!=NULL)		{	gps_type_num=GPS_UBLOX;		}
-	else if(strstr("MTK333X",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
-	else if(strstr("mtk333x",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
-	else if(strstr("MTK3333",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
-	else if(strstr("mtk3333",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
-	else if(strstr("MTK3339",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
-	else if(strstr("mtk3339",gps_type)!=NULL)	{	gps_type_num=GPS_MTK333x;	}
-	else										{	gps_enabled=false;			}
-	
+		
 	SetupGPSMessages();
 
 #ifdef USE_FREERTOS
@@ -152,7 +155,7 @@ int SetupGPS(void)
 	}
 	
 	xTaskCreatePinnedToCore(GPSReceiveTask,"GPS Input Task",20480,NULL,2,NULL,0);
-	xTaskCreatePinnedToCore(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL,0);
+//	xTaskCreatePinnedToCore(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL,0);
 
 //	xTaskCreate(GPSReceiveTask,"GPS Inpur Task",2048,NULL,2,NULL);
 //	xTaskCreate(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL);
@@ -192,7 +195,9 @@ void SetupGPSMessages(void)
 #endif						
 							break;
 						
-		case GPS_MTK333x:	Serial.println("\tMTX333X GPS Receiver selected\n");	
+		case GPS_MTK333x:	Serial.println("\tMTX333X GPS Receiver selected\n");
+							Serial.println("**************************************************************************");
+							gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);							
 		
 							break;
 	
@@ -207,7 +212,9 @@ void SetupGPSMessages(void)
 void GPSReceiveTask(void *pvParameters)
 {
 	char rxbyte;
-
+	char buffer[256];
+	int bufferptr=0;
+	
 	while(1)
 	{
 //		xSemaphoreTake(i2c_mutex,portMAX_DELAY);
@@ -217,9 +224,13 @@ void GPSReceiveTask(void *pvParameters)
 		
 		while(GPSSerialPort.available())
 		{
-			rxbyte=GPSSerialPort.read();
+//			rxbyte=GPSSerialPort.read();
+			rxbyte=gpsparser.read();
 			
-			if(gps_live_mode)
+			if(bufferptr<=sizeof(buffer))
+				buffer[bufferptr++]=rxbyte;
+			
+//			if(gps_live_mode)
 				Serial.write(rxbyte);
 
 //			if(gpsparser.process(rxbyte))
@@ -227,8 +238,14 @@ void GPSReceiveTask(void *pvParameters)
 //				Serial.println(gpsparser.getSentence());
 //			}
 
-			gpsparser.encode(rxbyte);
-					
+//			if(gpsparser.encode(rxbyte))
+//			{
+//				buffer[bufferptr]=0;
+//				Serial.println(buffer);			
+//				bufferptr=0;
+//			}
+			
+#if 0		
 			if(rxbyte=='\n')
 			{
 				Serial.print(F("Location: ")); 
@@ -279,6 +296,7 @@ void GPSReceiveTask(void *pvParameters)
 				
 				Serial.println("");
 			}
+#endif
 
 			// send it via a a message queue to the gps parser	
 //			message.rxbytes[bytecount++]=rxbyte;
@@ -404,6 +422,39 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 				
 		case 'l':	// live mode toggle
 					gps_live_mode=!gps_live_mode;
+					break;
+					
+		case '1':	Serial.println("1Hz NMEA rate");
+					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+					break;
+		
+		case '2':	Serial.println("2Hz NMEA rate");
+					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_2HZ);
+					break;
+		
+		case '5':	Serial.println("5Hz NMEA rate");
+					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+					break;
+		
+		case 'g':	Serial.println("GPGGA only");
+					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GGAONLY);
+					break;		
+
+		case 's':	Serial.println("GPGSA only");
+					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GSAONLY);
+					break;		
+		
+
+		case 'n':	Serial.println("All NMEA off");
+					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_OFF);
+					break;
+					
+		case 'm':	Serial.println("GPGSA, GPGGA and GPRMC");
+					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
+					break;
+		
+		case 'v':	Serial.println("Requesting version");
+					gpsparser.sendCommand(PMTK_Q_RELEASE);
 					break;
 		
 		case '?':	Serial.print("GPS Test Harness\r\n================\r\n\n");

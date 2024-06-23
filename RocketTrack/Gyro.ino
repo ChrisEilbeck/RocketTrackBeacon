@@ -90,16 +90,22 @@ void PollGyro(void *pvParameters)
 				{
 					ReadGyro(&ss.gyro_x,&ss.gyro_y,&ss.gyro_z);
 					gyro_trigger=false;
+					mag_trigger=true;
 				}
+				else
+					delay(1);
 			}
+			else
+			{
 				ReadGyro(&ss.gyro_x,&ss.gyro_y,&ss.gyro_z);
+				delay(gyro_period);
+			}
 		}
 		else
 		{
 			ss.gyro_x=0.0f;	ss.gyro_y=0.0f;	ss.gyro_z=0.0f;
+			delay(gyro_period);
 		}
-		
-		delay(gyro_period);
 	}
 }
 #else
