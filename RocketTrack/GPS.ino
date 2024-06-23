@@ -10,8 +10,7 @@
 
 
 #include <Adafruit_GPS.h>
-
-Adafruit_GPS gpsparser(&Wire);
+//Adafruit_GPS gpsparser(&Wire);
 
 //#include <TinyGPS.h>
 //TinyGPS gpsparser;
@@ -21,8 +20,8 @@ Adafruit_GPS gpsparser(&Wire);
 //char gpsparserBuffer[100];
 //MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
 
-//#include <TinyGPSPlus.h>
-//TinyGPSPlus gpsparser;
+#include <TinyGPSPlus.h>
+TinyGPSPlus gpsparser;
 
 bool gps_enabled=true;
 int gps_type_num=GPS_NMEA;
@@ -229,7 +228,7 @@ void GPSReceiveTask(void *pvParameters)
 
 			xSemaphoreGive(i2c_mutex);
 
-//			if(gps_live_mode)
+			if(gps_live_mode)
 				Serial.write(rxbyte);
 
 			static int state=0;
@@ -258,7 +257,7 @@ void GPSReceiveTask(void *pvParameters)
 							{
 								Serial.println("GxGGA ...");									
 								baro_trigger=true;
-								delay(1);
+//								delay(1);
 							}
 							
 							if(rxbyte=='$')	state=0;
@@ -267,98 +266,9 @@ void GPSReceiveTask(void *pvParameters)
 				default:	state=0;
 							break;
 			}
+
+			gpsparser.encode(rxbyte);
 			
-#if 0
-			if(gpsparser.newNMEAreceived())
-			{
-				char msg[8];
-				strncpy(msg,gpsparser.lastNMEA(),6);
-
-				if(strcmp(msg,"$GNVTG")==0)
-				{
-					Serial.println(msg);					
-					baro_trigger=true;
-					delay(1);
-				}
-				
-				
-				
-				
-#else
-			if(bufferptr<=sizeof(buffer))
-			{
-				buffer[bufferptr++]=rxbyte;
-				
-				char msg[8];
-
-				if(rxbyte=='\n')
-				{
-					
-				
-				
-				
-					buffer[bufferptr]=0;
-#if 0					
-//					Serial.print("\r\n");
-					Serial.print(buffer[1]);
-					Serial.print(buffer[2]);
-					Serial.print(buffer[3]);
-					Serial.print(buffer[4]);
-					Serial.println(buffer[5]);
-					Serial.print("\r\n");
-#endif					
-#if 0
-					if(		(buffer[1]=='G')
-						&&	(buffer[3]=='G')
-						&&	(buffer[4]=='G')
-						&&	(buffer[5]=='A')	)
-					{
-						Serial.println("GGA - Ping!");					
-//						baro_trigger=true;
-						delay(1);
-					}
-#endif
-					
-					memset(buffer,0,sizeof(buffer));
-					bufferptr=0;
-//					Serial.println("\nReset ...");
-				}		
-			}
-			else
-			{
-				memset(buffer,0,sizeof(buffer));
-				bufferptr=0;
-			}
-#endif			
-#if 0			
-			if(bufferptr<=sizeof(buffer))
-			{
-				buffer[bufferptr++]=rxbyte;
-				
-				if(rxbyte=='\n')
-				{
-					buffer[bufferptr]=0;
-//					Serial.println(buffer);
-
-//					if(strncmp(buffer,"$GNGGA",6)==0)
-					{
-//						Serial.println("ping!");
-						baro_trigger=true;
-						delay(1);
-					}
-					
-//					memset(buffer,0,sizeof(buffer));
-					bufferptr=0;
-				}
-			}
-			else
-			{
-//				memset(buffer,0,sizeof(buffer));
-				bufferptr=0;
-			}
-#endif
-			
-
 //			if(gpsparser.process(rxbyte))
 //			{
 //				Serial.println(gpsparser.getSentence());
@@ -374,8 +284,10 @@ void GPSReceiveTask(void *pvParameters)
 		else
 		{
 			xSemaphoreGive(i2c_mutex);
-			delay(1);
+//			delay(1);
 		}
+		
+		delay(1);
 	}
 }
 
@@ -463,36 +375,36 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					break;
 					
 		case '1':	Serial.println("1Hz NMEA rate");
-					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+//					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
 					break;
 		
 		case '2':	Serial.println("2Hz NMEA rate");
-					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_2HZ);
+//					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_2HZ);
 					break;
 		
 		case '5':	Serial.println("5Hz NMEA rate");
-					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+//					gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
 					break;
 		
 		case 'g':	Serial.println("GPGGA only");
-					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GGAONLY);
+//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GGAONLY);
 					break;		
 
 		case 's':	Serial.println("GPGSA only");
-					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GSAONLY);
+//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_GSAONLY);
 					break;		
 		
 
 		case 'n':	Serial.println("All NMEA off");
-					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_OFF);
+//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_OFF);
 					break;
 					
 		case 'm':	Serial.println("GPGSA, GPGGA and GPRMC");
-					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
+//					gpsparser.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
 					break;
 		
 		case 'v':	Serial.println("Requesting version");
-					gpsparser.sendCommand(PMTK_Q_RELEASE);
+//					gpsparser.sendCommand(PMTK_Q_RELEASE);
 					break;
 		
 		case '?':	Serial.print("GPS Test Harness\r\n================\r\n\n");
