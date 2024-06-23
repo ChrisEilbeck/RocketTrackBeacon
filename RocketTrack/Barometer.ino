@@ -134,10 +134,14 @@ void ReadBarometer(void)
 {
 	Serial.println("\tSampling the Barometer");
 
+	xSemaphoreTake(i2c_mutex,portMAX_DELAY);
+
 	ss.baro_altitude=ReadAltitude();
 	ss.baro_pressure=ReadPressure();
 	ss.baro_temperature=ReadTemperature();
 	ss.baro_humidity=ReadHumidity();
+
+	xSemaphoreGive(i2c_mutex);
 
 	if(ss.baro_max_altitude<ss.baro_altitude)
 		ss.baro_max_altitude=ss.baro_altitude;

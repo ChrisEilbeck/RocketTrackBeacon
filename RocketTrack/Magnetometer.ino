@@ -67,9 +67,13 @@ void ReadMagnetometer(float *mag_x,float *mag_y,float *mag_z)
 {
 	Serial.println("\t\t\t\tSampling the Magnetometer");
 
+	xSemaphoreTake(i2c_mutex,portMAX_DELAY);
+
 	sensors_event_t event;
 	mag.getEvent(&event);
 
+	xSemaphoreGive(i2c_mutex);
+	
 	*mag_x=event.magnetic.x;
 	*mag_y=event.magnetic.y;
 	*mag_z=event.magnetic.z;

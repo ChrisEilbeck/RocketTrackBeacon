@@ -120,7 +120,9 @@ void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
 	sensors_event_t a;
 	sensors_event_t g;
 	sensors_event_t temp;
-			
+	
+	xSemaphoreTake(i2c_mutex,portMAX_DELAY);
+
 	switch(acc_type_num)
 	{
 		case ACCELEROMETER_NONE:		Serial.print("Accelerometer misconfigured, disabling\r\n");
@@ -151,6 +153,8 @@ void ReadAccelerometer(float *accel_x,float *accel_y,float *accel_z)
 										acc_enable=0;
 										break;
 	}
+
+	xSemaphoreGive(i2c_mutex);
 }
 
 #ifdef USE_FREERTOS

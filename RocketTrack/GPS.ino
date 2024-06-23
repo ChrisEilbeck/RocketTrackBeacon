@@ -196,8 +196,8 @@ void SetupGPSMessages(void)
 							break;
 						
 		case GPS_MTK333x:	Serial.println("\tMTX333X GPS Receiver selected\n");
-							Serial.println("**************************************************************************");
-							gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);							
+//							Serial.println("**************************************************************************");
+//							gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);							
 		
 							break;
 	
@@ -212,23 +212,25 @@ void SetupGPSMessages(void)
 void GPSReceiveTask(void *pvParameters)
 {
 	char rxbyte;
-	char buffer[256];
-	int bufferptr=0;
+//	char buffer[256];
+//	int bufferptr=0;
 	
 	while(1)
 	{
-//		xSemaphoreTake(i2c_mutex,portMAX_DELAY);
+		xSemaphoreTake(i2c_mutex,portMAX_DELAY);
 
 //		int bytecount=0;
 //		message_t message;
 		
-		while(GPSSerialPort.available())
+		if(GPSSerialPort.available())
 		{
-//			rxbyte=GPSSerialPort.read();
-			rxbyte=gpsparser.read();
+			rxbyte=GPSSerialPort.read();
+//			rxbyte=gpsparser.read();
+
+			xSemaphoreGive(i2c_mutex);
 			
-			if(bufferptr<=sizeof(buffer))
-				buffer[bufferptr++]=rxbyte;
+//			if(bufferptr<=sizeof(buffer))
+//				buffer[bufferptr++]=rxbyte;
 			
 //			if(gps_live_mode)
 				Serial.write(rxbyte);
@@ -243,101 +245,13 @@ void GPSReceiveTask(void *pvParameters)
 //				buffer[bufferptr]=0;
 //				Serial.println(buffer);			
 //				bufferptr=0;
-//			}
-			
-#if 0		
-			if(rxbyte=='\n')
-			{
-				Serial.print(F("Location: ")); 
-				if(gpsparser.location.isValid())
-				{
-					Serial.print(gpsparser.location.lat(), 6);
-					Serial.print(F(","));
-					Serial.print(gpsparser.location.lng(), 6);
-				}
-				else
-				{
-					Serial.print(F("INVALID"));
-				}
-
-				Serial.print(F("		Date/Time: "));
-				if(gpsparser.date.isValid())
-				{
-					Serial.print(gpsparser.date.month());
-					Serial.print(F("/"));
-					Serial.print(gpsparser.date.day());
-					Serial.print(F("/"));
-					Serial.print(gpsparser.date.year());
-				}
-				else
-				{
-					Serial.print(F("INVALID"));
-				}
-
-				Serial.print(F(" "));
-				if(gpsparser.time.isValid())
-				{
-					if(gpsparser.time.hour() < 10) Serial.print(F("0"));
-					Serial.print(gpsparser.time.hour());
-					Serial.print(F(":"));
-					if(gpsparser.time.minute() < 10) Serial.print(F("0"));
-					Serial.print(gpsparser.time.minute());
-					Serial.print(F(":"));
-					if(gpsparser.time.second() < 10) Serial.print(F("0"));
-					Serial.print(gpsparser.time.second());
-					Serial.print(F("."));
-					if(gpsparser.time.centisecond() < 10) Serial.print(F("0"));
-					Serial.print(gpsparser.time.centisecond());
-				}
-				else
-				{
-					Serial.print(F("INVALID"));
-				}
-				
-				Serial.println("");
-			}
-#endif
-
-			// send it via a a message queue to the gps parser	
-//			message.rxbytes[bytecount++]=rxbyte;
-			
-//			if(rxbyte=='\n')
-//			{
-//				message.count=bytecount+1;
-//				message.rxbytes[bytecount]=0;
-							
-//				Serial.print("Sending ");
-//				Serial.print(message.count);
-//				Serial.print(" bytes: ");
-//				Serial.println((char *)message.rxbytes);
-
-//				break;
-
-#if 0							
-				// Check if the queue exists AND if there is any free space in the queue
-				if(QueueHandle!=NULL&&uxQueueSpacesAvailable(QueueHandle)>0)
-				{
-					// The line needs to be passed as pointer to void.
-					// The last parameter states how many milliseconds should wait (keep trying to send) if is not possible to send right away.
-					// When the wait parameter is 0 it will not wait and if the send is not possible the function will return errQUEUE_FULL
-					int ret=xQueueSend(QueueHandle,(void *)&message,0);
-					if(ret==pdTRUE)
-					{
-						// The message was successfully sent.
-					}
-					else if(ret==errQUEUE_FULL)
-					{
-						// Since we are checking uxQueueSpacesAvailable this should not occur, however if more than one task should
-						//   write into the same queue it can fill-up between the test and actual send attempt
-						Serial.println("The `TaskReadFromSerial` was unable to send data into the Queue");
-					}  // Queue send check
-				}  // Queue sanity check
-#endif
-//			}
+//			}	
 		}
-
-//		xSemaphoreGive(i2c_mutex);
-		delay(1);
+		else
+		{
+			xSemaphoreGive(i2c_mutex);
+			delay(1);
+		}
 	}
 }
 

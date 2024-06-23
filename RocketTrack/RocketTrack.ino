@@ -85,6 +85,14 @@ void setup()
 	Wire.begin(SDA,SCL);
 	Wire.setClock(400000);
 
+#if USE_FREERTOS
+	i2c_mutex=xSemaphoreCreateMutex();
+	if(i2c_mutex==NULL)
+	{
+		Serial.println("Failed to create I2C mutex.  This is generally bad ...");
+	}
+#endif
+
 	// mandatory peripherals
 
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
@@ -136,7 +144,7 @@ void setup()
 	if(mag_enable&&SetupMagnetometer())		{	Serial.println("Magnetometer setup failed, disabling ...");		mag_enable=false;		}
 	if(baro_enable&&SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");		baro_enable=false;		}
 	
-//	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
+	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 //	SetupOnePPS();
 
 //	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}

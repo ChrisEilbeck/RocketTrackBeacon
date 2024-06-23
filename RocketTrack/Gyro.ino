@@ -130,8 +130,12 @@ void ReadGyro(float *gyro_x,float *gyro_y,float *gyro_z)
 {
 	Serial.println("\t\t\tSampling the Gyro");
 	
+	xSemaphoreTake(i2c_mutex,portMAX_DELAY);
+
 	sensors_event_t g;
 	gyro.getEvent(&g);
+	
+	xSemaphoreGive(i2c_mutex);
 	
 	*gyro_x=g.gyro.x;
 	*gyro_y=g.gyro.y;
