@@ -1,0 +1,39 @@
+
+h1
+{
+	font-size: 80px;
+	width: 100%;
+	text-align: center;
+}
+
+.buttonsection
+{
+	padding-top: 30px;
+	width: 100%;
+	text-align: center;
+}
+
+.menubutton
+{
+	width: 350px;
+	font-size: 50px;
+	border-radius: 20px;
+	padding-top: 20px;
+	padding-bottom: 20px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.bigbutton
+{
+	width: 700px;
+	font-size: 50px;
+	border-radius: 20px;
+	padding-top: 20px;
+	padding-bottom: 20px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	background-color: red;
+	color: white;
+}
+

@@ -86,7 +86,21 @@ int SetupBarometer(void)
 #ifdef USE_FREERTOS
 void PollBarometer(void *pvParameters)
 {
-	delay(1000);
+	// sample the barometer for a second, average and use that as the launch altitude
+
+	float avg_alt=0.0f;
+	for(int cnt=0;cnt<100;cnt++)
+	{
+		ReadBarometer();
+		avg_alt+=ss.baro_altitude;	
+		delay(10);
+	}
+	
+	ss.baro_launch_altitude=avg_alt/100.0f;
+	
+	Serial.print("Launch altitude stored: ");
+	Serial.print(ss.baro_launch_altitude);
+	Serial.println(" m");
 	
 	while(1)
 	{
