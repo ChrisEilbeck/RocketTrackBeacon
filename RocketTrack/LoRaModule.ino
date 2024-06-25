@@ -17,8 +17,6 @@
 
 #include "Packetisation.h"
 
-//typedef enum {lmIdle, lmListening, lmSending} tLoRaMode;
-
 bool LoRaTransmitSemaphore=false;
 bool LoRaTXDoneSemaphore=false;
 int LoRaBurstDuration=0;
@@ -65,7 +63,6 @@ uint32_t LastLoRaTX=0;
 int SetupLoRa(void)
 {
 #if USE_ARDUINO_LORA
-
     LoRa.setPins(LORA_NSS,LORA_RESET,LORA_DIO0);
 	LoRa.onTxDone(onTxDone);
 	
@@ -79,6 +76,13 @@ int SetupLoRa(void)
 #endif
 	
 	SetLoRaMode(lora_mode);
+	
+#if USE_FREERTOS	
+	xTaskCreate(LoRaTask,"LoRa Task",2048,NULL,2,NULL);
+
+
+
+#endif
 }
 
 void onTxDone()
@@ -138,7 +142,6 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 		case 'g':	Serial.println("Transmitting GPS LoRa packet");
 					PackPacket(TxPacket,&TxPacketLength);
 					EncryptPacket(TxPacket);
-//					TxPacketLength=16;
 					LoRaTransmitSemaphore=1;
 					
 					if(strcmp(lora_mode,"Long Range")==0)	led_control(0xf0f0f0f0,0);
@@ -235,7 +238,7 @@ int HighRateCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 
 void SetLoRaMode(char *mode)
 {
-	LoRa.setFrequency(lora_freq);
+	LoRa.setFrequency(lora_freq+lora_offset*1e3);
 
 #if LOW_POWER_TRANSMIT
 	LoRa.setTxPower(5);
@@ -300,7 +303,7 @@ void PollLoRa(void)
 		SetLoRaMode(lora_mode);		
 #endif		
 
-		LoRa.setFrequency(lora_freq);
+		LoRa.setFrequency(lora_freq+lora_offset*1e3);
 
 #if USE_ARDUINO_LORA
 		LoRa.beginPacket(false);
@@ -323,6 +326,54 @@ void PollLoRa(void)
 
 		tx_active=0;
 		SetTXIndicator(tx_active);
+	}
+}
+
+void LoRaTask(void *pvParameters)
+{
+	while(1)
+	{
+		// scale to Hz if our data is in MHz
+		if(lora_freq<1e6)	lora_freq*=1e6;
+		
+		if(LoRaTransmitSemaphore)
+		{
+			Serial.print("Starting tx ...");
+			TXStartTimeMillis=millis();
+
+			tx_active=1;
+			SetTXIndicator(tx_active);
+			
+#if 0
+			SetLoRaMode(lora_mode);		
+#endif		
+
+			LoRa.setFrequency(lora_freq+lora_offset*1e3);
+
+#if USE_ARDUINO_LORA
+			LoRa.beginPacket(false);
+			LoRa.write(TxPacket,TxPacketLength);
+			LoRa.endPacket(true);
+#endif
+#if USE_RADIOHEAD
+			LoRa.send(TxPacket,TxPacketLength);
+#endif
+			
+			LoRaTransmitSemaphore=0;
+		}
+
+		if(LoRaTXDoneSemaphore)
+		{
+			Serial.print("\t\tlora tx done in ");
+			Serial.print(LoRaBurstDuration);
+			Serial.print(" ms\r\n");
+			LoRaTXDoneSemaphore=false;
+
+			tx_active=0;
+			SetTXIndicator(tx_active);
+		}
+		
+		delay(1);
 	}
 }
 
