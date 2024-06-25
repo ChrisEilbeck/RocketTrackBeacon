@@ -20,13 +20,9 @@ int SetupSDCard(void)
 	pinMode(SDCARD_NSS,OUTPUT);
 	digitalWrite(SDCARD_NSS,HIGH);
 
-
-
 #if 1
-
-
 	SPIClass sd_spi(HSPI);
-	sd_spi.begin(SDCARD_CLK,SDCARD_MISO,SDCARD_MOSI,SDCARD_NSS);
+	sd_spi.begin(SDCARD_SCK,SDCARD_MISO,SDCARD_MOSI,SDCARD_NSS);
 
 	if (!SD.begin(SDCARD_NSS,sd_spi))
 	{
@@ -35,9 +31,6 @@ int SetupSDCard(void)
 	}
 
 #else
-
-
-
 	SPIClass spiSD=SPIClass(HSPI);
 	spiSD.begin();
 
@@ -50,7 +43,6 @@ int SetupSDCard(void)
 		sdcard_enable=false;
 		return(1);
 	}
-
 #endif
 	
 	uint8_t cardType=SD.cardType();

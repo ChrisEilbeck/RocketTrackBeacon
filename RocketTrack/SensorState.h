@@ -10,6 +10,12 @@ typedef struct
 	int gps_fix;
 	int gps_numsats;
 	float gps_max_altitude;
+	float gps_launch_latitude;
+	float gps_launch_longitude;
+	float gps_apogee_latitude;
+	float gps_apogee_longitude;
+	float gps_landing_latitude;
+	float gps_landing_longitude;
 		
 	float baro_altitude;
 	float baro_pressure;

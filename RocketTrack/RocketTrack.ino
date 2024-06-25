@@ -28,7 +28,7 @@ to be done
 */ 
 
 #include <axp20x.h>
-#include <LoRa.h>
+//#include <LoRa.h>
 #include <SPI.h>
 #include <Wire.h>
 

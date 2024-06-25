@@ -1,9 +1,20 @@
 
+#include "HardwareAbstraction.h"
+
+#if USE_RADIOHEAD
+	#include <RadioHead.h>
+	#include <RH_RF95.h>
+	#include <RHSoftwareSPI.h>
+#endif
+
+#if USE_ARDUINO_LORA
+	#include <LoRa.h>
+#endif
+
 #define LOW_POWER_TRANSMIT 0
 
 #include <string.h>
 
-#include "LoRa.h"
 #include "Packetisation.h"
 
 //typedef enum {lmIdle, lmListening, lmSending} tLoRaMode;
@@ -17,9 +28,14 @@ int tx_active=0;
 
 // LORA settings
 #define LORA_FREQ			433920000
-#define LORA_OFFSET			0         // Frequency to add in kHz to make Tx frequency accurate
+#define LORA_OFFSET			0
 
 // HARDWARE DEFINITION
+
+#if USE_RADIOHEAD
+	RHSoftwareSPI software_spi;
+	RH_RF95 LoRa(LORA_CS,LORA_IRQ,software_spi);
+#endif
 
 double lora_freq=LORA_FREQ;
 double lora_offset=LORA_OFFSET;
@@ -48,11 +64,19 @@ uint32_t LastLoRaTX=0;
 
 int SetupLoRa(void)
 {
+#if USE_ARDUINO_LORA
+
     LoRa.setPins(LORA_NSS,LORA_RESET,LORA_DIO0);
 	LoRa.onTxDone(onTxDone);
 	
 	if(!LoRa.begin(lora_freq))	{	Serial.println("Starting LoRa module failed!");	return(1);	}
 	else						{	Serial.println("Started LoRa module ok ...");	return(0);	}
+#endif
+#if USE_RADIOHEAD
+	software_spi.setPins(LORA_MISO,LORA_MOSI,LORA_SCK);
+	if(!LoRa.init())			{	Serial.println("LoRa Radio: init failed.");		return(1);	}
+	else						{	Serial.println("LoRa Radio: init OK!");			return(0);	}
+#endif
 	
 	SetLoRaMode(lora_mode);
 }
@@ -77,7 +101,12 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	switch(cmd[1]|0x20)
 	{
 		case 'd':	Serial.println("Dumping LoRa registers");
+#if USE_ARDUINO_LORA
 					LoRa.dumpRegisters(Serial);
+#endif
+#if USE_RADIOHEAD
+
+#endif
 					break;
 		
 		case 'x':	Serial.print("High Rate  SF     - ");	Serial.println(hr_sf);
@@ -206,6 +235,8 @@ int HighRateCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 
 void SetLoRaMode(char *mode)
 {
+	LoRa.setFrequency(lora_freq);
+
 #if LOW_POWER_TRANSMIT
 	LoRa.setTxPower(5);
 #else
@@ -241,8 +272,13 @@ void SetLoRaMode(char *mode)
 		Serial.println("Duff LoRa mode selected!");
 	}
 	
+#if USE_ARDUINO_LORA
 	if(lora_crc)	LoRa.enableCrc();
 	else			LoRa.disableCrc();
+#endif
+#if USE_RADIOHEAD
+	LoRa.setPayloadCRC(lora_crc);
+#endif
 }
 
 void PollLoRa(void)
@@ -265,10 +301,15 @@ void PollLoRa(void)
 #endif		
 
 		LoRa.setFrequency(lora_freq);
-		
+
+#if USE_ARDUINO_LORA
 		LoRa.beginPacket(false);
 		LoRa.write(TxPacket,TxPacketLength);
 		LoRa.endPacket(true);
+#endif
+#if USE_RADIOHEAD
+		LoRa.send(TxPacket,TxPacketLength);
+#endif
 		
 		LoRaTransmitSemaphore=0;
 	}
