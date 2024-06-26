@@ -32,7 +32,7 @@ int tx_active=0;
 
 #if USE_RADIOHEAD
 	RHSoftwareSPI software_spi;
-	RH_RF95 LoRa(LORA_CS,LORA_IRQ,software_spi);
+	RH_RF95 LoRa(LORA_CS,LORA_DIO0,software_spi);
 #endif
 
 double lora_freq=LORA_FREQ;
@@ -71,6 +71,7 @@ int SetupLoRa(void)
 #endif
 #if USE_RADIOHEAD
 	software_spi.setPins(LORA_MISO,LORA_MOSI,LORA_SCK);
+		
 	if(!LoRa.init())			{	Serial.println("LoRa Radio: init failed.");		return(1);	}
 	else						{	Serial.println("LoRa Radio: init OK!");			return(0);	}
 #endif
@@ -173,6 +174,11 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 		
 		case '-':	lora_offset-=1.0;
 					Serial.printf("LoRa offset = %.1f\n",lora_offset);
+					break;
+		
+		case 'v':	Serial.print("LoRa version: ");
+					Serial.println(LoRa.getDeviceVersion());
+					
 					break;
 		
 		case '?':	Serial.print("LoRa Test Harness\r\n================\r\n\n");

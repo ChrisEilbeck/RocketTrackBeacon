@@ -134,10 +134,10 @@ void setup()
 #endif
 #endif
 
-//	acc_enable=false;
-//	baro_enable=false;
-//	gyro_enable=false;
-//	mag_enable=false;
+	acc_enable=false;
+	baro_enable=false;
+	gyro_enable=false;
+	mag_enable=false;
 	
 	if(acc_enable&&SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");	acc_enable=false;		}
 	if(gyro_enable&&SetupGyro())			{	Serial.println("Gyro setup failed, disabling ...");				gyro_enable=false;		}
@@ -147,10 +147,10 @@ void setup()
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 //	SetupOnePPS();
 
-//	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
-//	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
+	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
+	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
-	#if 0
+	#if 1
 		Serial.println(crypto_key_hex);	DumpHexPacket(crypto_key,32);
 	#endif
 
@@ -168,8 +168,6 @@ void setup()
 		if(SetupTimers())			{	Serial.println("Timer Setup failed, falling back to software timing ...");	timer_enable=false;	}
 	#endif
 #endif
-
-//	acc_enable=false;
 
 	Serial.println(baro_enable?"Barometer enabled":"Barometer disabled");
 	Serial.println(acc_enable?"Accelerometer enabled":"Accelerometer disabled");
