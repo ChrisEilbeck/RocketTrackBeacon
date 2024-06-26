@@ -20,8 +20,8 @@
 //char gpsparserBuffer[100];
 //MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
 
-//#include <TinyGPSPlus.h>
-//TinyGPSPlus gpsparser;
+#include <TinyGPSPlus.h>
+TinyGPSPlus gpsparser;
 
 bool gps_enabled=true;
 int gps_type_num=GPS_NMEA;
@@ -195,9 +195,6 @@ void SetupGPSMessages(void)
 							break;
 						
 		case GPS_MTK333x:	Serial.println("\tMTX333X GPS Receiver selected\n");
-//							Serial.println("**************************************************************************");
-//							gpsparser.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);							
-		
 							break;
 	
 		default:			// assume this is just a generic GPS and leave the
@@ -224,8 +221,10 @@ void GPSReceiveTask(void *pvParameters)
 		if(GPSSerialPort.available())
 		{
 			rxbyte=GPSSerialPort.read();
-//			rxbyte=gpsparser.read();
 
+//			gpsparser.process(rxbyte);
+			gpsparser.encode(rxbyte);
+			
 			xSemaphoreGive(i2c_mutex);
 
 			if(gps_live_mode)
@@ -255,19 +254,29 @@ void GPSReceiveTask(void *pvParameters)
 							
 				case 5:		if(rxbyte=='\n')
 							{
-								Serial.println("GxGGA ...");									
+//								Serial.println("GxGGA ...");									
 								baro_trigger=true;
 //								delay(1);
 							}
 							
-							if(rxbyte=='$')	state=0;
+							if(rxbyte=='$')
+							{
+								// this is the start of a message after a
+								// GxGGA message.  We should have a new
+								// position fix so process it now
+								
+								
+								
+								
+								state=0;
+							}
+							
 							break;
 				
 				default:	state=0;
 							break;
 			}
 
-//			gpsparser.encode(rxbyte);
 			
 //			if(gpsparser.process(rxbyte))
 //			{
@@ -348,11 +357,40 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 	switch(cmd[1]|0x20)
 	{
-		case 'p':	// position fix
-				    Serial.print(GPSSerialPort.latitude,6);
-					Serial.print(F(","));
-				    Serial.print(GPSSerialPort.longitude,6);
+		case 'r':	// reset gps
+					Serial.println("GPS full reset");
+					GPSSerialPort.println("$PMTK104*37");
+					break;
 		
+		case 'c':	// cold start
+					Serial.println("GPS cold start");
+					GPSSerialPort.println("$PMTK103*30");
+					break;
+		
+		case 'w':	// warm start
+					Serial.println("GPS warm start");
+					GPSSerialPort.println("$PMTK102*31");
+					break;
+		
+		case 'h':	// hot start
+					Serial.println("GPS hot start");
+					GPSSerialPort.println("$PMTK101*32");
+					break;
+	
+		case 't':	// time
+					Serial.println("GPS time");
+					Serial.print(gpsparser.date.day());		Serial.print("/");	Serial.print(gpsparser.date.month());	Serial.print("/");	Serial.print(gpsparser.date.year());	Serial.print(" ");
+					Serial.print(gpsparser.time.hour());	Serial.print(":");	Serial.print(gpsparser.time.minute());	Serial.print(":");	Serial.println(gpsparser.time.second());
+					break;
+		
+		case 'p':	// position fix
+					Serial.println("GPS position");
+				    Serial.print(gpsparser.location.lat(),6);
+					Serial.print(",");
+				    Serial.print(gpsparser.location.lng(),6);
+					Serial.print(",");
+					Serial.print(gpsparser.altitude.meters(),1);
+					Serial.println(" m");		
 #if 0
 					Serial.printf("Lat = %.6f, Lon = %.6f, ",ss.gps_latitude,ss.gps_longitude);
 					Serial.printf("height = %.1f\r\n",ss.gps_altitude);
@@ -360,8 +398,9 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					break;
 		
 		case 'f':	// fix status
-					Serial.print("Fix: ");		Serial.print((int)GPSSerialPort.fix);
-					Serial.print(" quality: ");	Serial.println((int)GPSSerialPort.fixquality);
+					Serial.println("GPS fix status");
+//					Serial.print("Fix: ");		Serial.print((int)GPSSerialPort.fix);
+//					Serial.print(" quality: ");	Serial.println((int)GPSSerialPort.fixquality);
 
 #if 0
 					if(ss.gps_fix==0x00)		Serial.println("No Fix");
