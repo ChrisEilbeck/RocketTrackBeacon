@@ -20,8 +20,13 @@
 //char gpsparserBuffer[100];
 //MicroNMEA gpsparser(gpsparserBuffer,sizeof(gpsparserBuffer));
 
-#include <TinyGPSPlus.h>
-TinyGPSPlus gpsparser;
+//#include <TinyGPSPlus.h>
+//TinyGPSPlus gpsparser;
+
+//#include <ArduinoNmeaParser.h>
+//void onRmcUpdate(nmea::RmcData const);
+//void onGgaUpdate(nmea::GgaData const);
+//ArduinoNmeaParser gpsparser(onRmcUpdate,onGgaUpdate);
 
 bool gps_enabled=true;
 int gps_type_num=GPS_NMEA;
@@ -223,32 +228,61 @@ void GPSReceiveTask(void *pvParameters)
 			rxbyte=GPSSerialPort.read();
 
 //			gpsparser.process(rxbyte);
-			gpsparser.encode(rxbyte);
+//			gpsparser.encode(rxbyte);
 			
 			xSemaphoreGive(i2c_mutex);
 
 			if(gps_live_mode)
 				Serial.write(rxbyte);
 
-			if(		gpsparser.location.isUpdated()
-				&&	gpsparser.location.isValid()	)
+#if 1
+			if(GPSSerialPort.newNMEAreceived())
 			{
-			
+				GPSSerialPort.parse(GPSSerialPort.lastNMEA());
+				
+				ss.gps_latitude=GPSSerialPort.latitudeDegrees;
+				ss.gps_longitude=GPSSerialPort.longitudeDegrees;
+				ss.gps_altitude=GPSSerialPort.altitude;
+				
+				if(ss.gps_max_altitude<ss.gps_altitude)
+					ss.gps_max_altitude=ss.gps_altitude;				
+				
+				Serial.print(GPSSerialPort.latitudeDegrees,6);
+				Serial.print(", ");
+				Serial.print(GPSSerialPort.longitudeDegrees,6);
+				Serial.print(", ");
+				Serial.println(GPSSerialPort.altitude,1);				
+			}
+#endif
+#if 0
+			if(gpsparser.location.isUpdated())
+			{			
 				ss.gps_latitude=gpsparser.location.lat();
 				ss.gps_longitude=gpsparser.location.lng();
+				
+#if 0				
+				Serial.print(ss.gps_latitude,6);
+				Serial.print(", ");
+				Serial.println(ss.gps_longitude,6);
+#endif
 				
 				ss.battery_voltage=4.200;
 				ss.gps_numsats=7;
 				ss.gps_fix=3;
 			}
 			
-			if(		gpsparser.altitude.isUpdated()
-				&&	gpsparser.location.isValid()		)
+			if(gpsparser.altitude.isUpdated())
 			{
 				ss.gps_altitude=gpsparser.altitude.meters();
 				if(ss.gps_max_altitude<ss.gps_altitude)
 					ss.gps_max_altitude=ss.gps_altitude;
+
+#if 0
+				Serial.print(ss.gps_altitude,1);
+				Serial.println(" m");
+#endif
 			}
+#endif
 
 			static int state=0;			
 			switch(state)
@@ -388,18 +422,22 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 		case 't':	// time
 					Serial.println("GPS time");
+#if 0
 					Serial.print(gpsparser.date.day());		Serial.print("/");	Serial.print(gpsparser.date.month());	Serial.print("/");	Serial.print(gpsparser.date.year());	Serial.print(" ");
 					Serial.print(gpsparser.time.hour());	Serial.print(":");	Serial.print(gpsparser.time.minute());	Serial.print(":");	Serial.println(gpsparser.time.second());
+#endif
 					break;
 		
 		case 'p':	// position fix
 					Serial.println("GPS position");
+#if 0
 				    Serial.print(gpsparser.location.lat(),6);
 					Serial.print(", ");
 				    Serial.print(gpsparser.location.lng(),6);
 					Serial.print(", ");
 					Serial.print(gpsparser.altitude.meters(),1);
-					Serial.println(" m");		
+					Serial.println(" m");
+#endif
 					break;
 		
 		case 'f':	// fix status
@@ -496,3 +534,78 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	return(retval);
 }
 
+#if 0
+void onRmcUpdate(nmea::RmcData const rmc)
+{
+  Serial.print("RMC ");
+
+  if      (rmc.source == nmea::RmcSource::GPS)     Serial.print("GPS");
+  else if (rmc.source == nmea::RmcSource::GLONASS) Serial.print("GLONASS");
+  else if (rmc.source == nmea::RmcSource::Galileo) Serial.print("Galileo");
+  else if (rmc.source == nmea::RmcSource::GNSS)    Serial.print("GNSS");
+  else if (rmc.source == nmea::RmcSource::BDS)     Serial.print("BDS");
+
+  Serial.print(" ");
+  Serial.print(rmc.time_utc.hour);
+  Serial.print(":");
+  Serial.print(rmc.time_utc.minute);
+  Serial.print(":");
+  Serial.print(rmc.time_utc.second);
+  Serial.print(".");
+  Serial.print(rmc.time_utc.microsecond);
+
+  if (rmc.is_valid)
+  {
+    Serial.print(" : LON ");
+    Serial.print(rmc.longitude);
+    Serial.print(" ° | LAT ");
+    Serial.print(rmc.latitude);
+    Serial.print(" ° | VEL ");
+    Serial.print(rmc.speed);
+    Serial.print(" m/s | HEADING ");
+    Serial.print(rmc.course);
+    Serial.print(" °");
+  }
+
+  Serial.println();
+}
+
+void onGgaUpdate(nmea::GgaData const gga)
+{
+  Serial.print("GGA ");
+
+  if      (gga.source == nmea::GgaSource::GPS)     Serial.print("GPS");
+  else if (gga.source == nmea::GgaSource::GLONASS) Serial.print("GLONASS");
+  else if (gga.source == nmea::GgaSource::Galileo) Serial.print("Galileo");
+  else if (gga.source == nmea::GgaSource::GNSS)    Serial.print("GNSS");
+  else if (gga.source == nmea::GgaSource::BDS)     Serial.print("BDS");
+
+  Serial.print(" ");
+  Serial.print(gga.time_utc.hour);
+  Serial.print(":");
+  Serial.print(gga.time_utc.minute);
+  Serial.print(":");
+  Serial.print(gga.time_utc.second);
+  Serial.print(".");
+  Serial.print(gga.time_utc.microsecond);
+
+  if (gga.fix_quality != nmea::FixQuality::Invalid)
+  {
+    Serial.print(" : LON ");
+    Serial.print(gga.longitude);
+    Serial.print(" ° | LAT ");
+    Serial.print(gga.latitude);
+    Serial.print(" ° | Num Sat. ");
+    Serial.print(gga.num_satellites);
+    Serial.print(" | HDOP =  ");
+    Serial.print(gga.hdop);
+    Serial.print(" m | Altitude ");
+    Serial.print(gga.altitude);
+    Serial.print(" m | Geoidal Separation ");
+    Serial.print(gga.geoidal_separation);
+    Serial.print(" m");
+  }
+
+  Serial.println();
+}
+#endif
