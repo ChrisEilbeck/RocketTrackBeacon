@@ -80,13 +80,15 @@ void PollDisplay(void)
 		char buffer[32];
 		
 		display.setTextSize(1);
-		
+
+#if 0		
 		sprintf(buffer,"%04d/%02d/%02d\r\n",beaconyear,beaconmonth,beaconday);
 		display.print(buffer);
 		
 		sprintf(buffer,"  %02d%02d%02d\r\n",beaconhour,beaconmin,beaconsec);
 		display.print(buffer);
-		
+#endif
+	
 		switch(DisplayState)
 		{
 			case 0 ... 5:	display.setTextSize(1);

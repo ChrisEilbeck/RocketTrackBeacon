@@ -72,6 +72,7 @@ String processor(const String& var)
 	{
 		sprintf(buffer,"%.3f",axp.getBattVoltage()/1000);
 	}
+#if 0
 	else if(var=="LATITUDE")
 	{
 		if(beaconlat>0)	sprintf(buffer,"%2.6f N",beaconlat/1e7);	else	sprintf(buffer,"%2.6f S",-beaconlat/1e7);
@@ -84,6 +85,7 @@ String processor(const String& var)
 	{
 		sprintf(buffer,"%.1f",beaconheight/1e3);
 	}
+#endif
 #if 0
 	else if(var=="NUM_CHANNELS")
 	{
