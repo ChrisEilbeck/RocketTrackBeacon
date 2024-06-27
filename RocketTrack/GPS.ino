@@ -230,8 +230,27 @@ void GPSReceiveTask(void *pvParameters)
 			if(gps_live_mode)
 				Serial.write(rxbyte);
 
-			static int state=0;
+			if(		gpsparser.location.isUpdated()
+				&&	gpsparser.location.isValid()	)
+			{
 			
+				ss.gps_latitude=gpsparser.location.lat();
+				ss.gps_longitude=gpsparser.location.lng();
+				
+				ss.battery_voltage=4.200;
+				ss.gps_numsats=7;
+				ss.gps_fix=3;
+			}
+			
+			if(		gpsparser.altitude.isUpdated()
+				&&	gpsparser.location.isValid()		)
+			{
+				ss.gps_altitude=gpsparser.altitude.meters();
+				if(ss.gps_max_altitude<ss.gps_altitude)
+					ss.gps_max_altitude=ss.gps_altitude;
+			}
+
+			static int state=0;			
 			switch(state)
 			{
 				case 0:		if(rxbyte=='G')	state=1;
@@ -259,17 +278,7 @@ void GPSReceiveTask(void *pvParameters)
 //								delay(1);
 							}
 							
-							if(rxbyte=='$')
-							{
-								// this is the start of a message after a
-								// GxGGA message.  We should have a new
-								// position fix so process it now
-								
-								
-								
-								
-								state=0;
-							}
+							if(rxbyte=='$')	state=0;
 							
 							break;
 				
@@ -386,15 +395,11 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 		case 'p':	// position fix
 					Serial.println("GPS position");
 				    Serial.print(gpsparser.location.lat(),6);
-					Serial.print(",");
+					Serial.print(", ");
 				    Serial.print(gpsparser.location.lng(),6);
-					Serial.print(",");
+					Serial.print(", ");
 					Serial.print(gpsparser.altitude.meters(),1);
 					Serial.println(" m");		
-#if 0
-					Serial.printf("Lat = %.6f, Lon = %.6f, ",ss.gps_latitude,ss.gps_longitude);
-					Serial.printf("height = %.1f\r\n",ss.gps_altitude);
-#endif
 					break;
 		
 		case 'f':	// fix status
@@ -448,7 +453,6 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_GSAONLY);
 					break;		
 		
-
 		case 'n':	Serial.println("All NMEA off");
 					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_OFF);
 					break;
@@ -456,6 +460,22 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 		case 'm':	Serial.println("GPGSA, GPGGA and GPRMC");
 					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_RMCGGAGSA);
 					break;
+		
+		case 'x':	Serial.println("GPS current fix");
+				    Serial.print(ss.gps_latitude,6);
+					Serial.print(", ");
+				    Serial.print(ss.gps_longitude,6);
+					Serial.print(", ");
+					Serial.print(ss.gps_altitude,1);
+					Serial.println(" m");		
+					break;
+		
+		case 'y':	Serial.println("GGA and RMC only");
+					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+					break;
+		
+		case 'a':	Serial.println("All NMEA on");
+					GPSSerialPort.println(PMTK_SET_NMEA_OUTPUT_ALLDATA);
 		
 		case 'v':	Serial.println("Requesting version");
 					GPSSerialPort.println(PMTK_Q_RELEASE);
