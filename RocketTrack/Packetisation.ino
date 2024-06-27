@@ -85,7 +85,8 @@ void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 void UnpackPacket(uint8_t *RxPacket,uint16_t RxPacketLength)
 {
 	Serial.print("UnpackPacket()\r\n");
-	
+
+#if 0	
 	beaconid=RxPacket[0];
 	
 	ss.gps_numsats=RxPacket[1]&0x03f;
@@ -112,14 +113,16 @@ void UnpackPacket(uint8_t *RxPacket,uint16_t RxPacketLength)
 	Serial.printf("Beacon Lon:\t%.6f\r\n",beaconlon/1e7);
 	Serial.printf("Beacon Hght:\t%.6f\r\n",beaconheight/1e3);
 #endif
+#endif
 }
 
-void DumpHexPacket(uint8_t *packet,uint16_t packetlength)
+void DumpHexPacket(uint8_t *packet,uint16_t packetlength,bool newline)
 {
 	int cnt;
 	for(cnt=0;cnt<packetlength;cnt++)
 		Serial.printf("%02x",packet[cnt]);
 	
-	Serial.print("\r\n");
+	if(newline)
+		Serial.print("\r\n");
 }
 
