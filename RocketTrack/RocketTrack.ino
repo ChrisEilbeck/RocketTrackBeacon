@@ -150,11 +150,11 @@ void setup()
 	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
 	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
-	#if 1
-		Serial.println(crypto_key_hex);	DumpHexPacket(crypto_key,32);
+	#if 0
+		Serial.println(crypto_key_hex);	DumpHexPacket(crypto_key,32,true);
 	#endif
 
-//	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
+	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
 
 //	if(SetupLEDs())				{	Serial.println("LED Setup failed, halting ...\r\n");						leds_enable=false;		}
 
@@ -236,7 +236,17 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 		case 'x':	OK=1;
 					i2c_bus_scanner();
 					break;
-		
+
+#if 0		
+		case 't':	{
+						char taskbuffer[2048];
+						vTaskList(taskbuffer);
+						Serial.println(taskbuffer);
+					}
+					
+					break;
+#endif
+				
 		case '?':	Serial.print("RocketTrack Test Harness Menu\r\n=================\r\n\n");
 					Serial.print("a\t-\tAccelerometer Commands\r\n");
 					Serial.print("b\t-\tBarometer Commands\r\n");
