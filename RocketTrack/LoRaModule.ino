@@ -11,7 +11,7 @@
 	#include <LoRa.h>
 #endif
 
-#define LOW_POWER_TRANSMIT 0
+#define LOW_POWER_TRANSMIT 1
 
 #include <string.h>
 
@@ -26,30 +26,30 @@ int tx_active=0;
 
 // LORA settings
 #define LORA_FREQ			433920000
-#define LORA_OFFSET			0
+#define LORA_OFFSET			4.185
 
 // HARDWARE DEFINITION
 
 #if USE_RADIOHEAD
 	RHSoftwareSPI software_spi;
-	RH_RF95 LoRa(LORA_CS,LORA_DIO0,software_spi);
+	RH_RF95 LoRa(LORA_NSS,LORA_DIO0,software_spi);
 #endif
 
 double lora_freq=LORA_FREQ;
 double lora_offset=LORA_OFFSET;
-char lora_mode[32]="High Rate";
+char lora_mode[16]="High Rate";
 
 int lora_crc=0;
 
-int hr_bw=1;
-int hr_sf=2;
-int hr_cr=3;
-int hr_period=4;
+int hr_bw=125000;
+int hr_sf=7;
+int hr_cr=8;
+int hr_period=1000;
 
-int lr_bw=5;
-int lr_sf=6;
-int lr_cr=7;
-int lr_period=8;
+int lr_bw=31250;
+int lr_sf=12;
+int lr_cr=8;
+int lr_period=10000;
 
 bool lora_constant_transmit=false;
 
@@ -63,27 +63,41 @@ uint32_t LastLoRaTX=0;
 int SetupLoRa(void)
 {
 #if USE_ARDUINO_LORA
+	Serial.println("Using Arduino LoRa");
+
     LoRa.setPins(LORA_NSS,LORA_RESET,LORA_DIO0);
 	LoRa.onTxDone(onTxDone);
 	
 	if(!LoRa.begin(lora_freq))	{	Serial.println("Starting LoRa module failed!");	return(1);	}
-	else						{	Serial.println("Started LoRa module ok ...");	return(0);	}
+	else						{	Serial.println("Started LoRa module ok ...");				}
 #endif
 #if USE_RADIOHEAD
+	Serial.println("Using RadioHead");
+
+	pinMode(LORA_RESET,OUTPUT);
+	digitalWrite(LORA_RESET,LOW);
+	delay(20);
+	digitalWrite(LORA_RESET,HIGH);
+	delay(20);
+
+	pinMode(LORA_NSS,INPUT);
 	software_spi.setPins(LORA_MISO,LORA_MOSI,LORA_SCK);
 		
 	if(!LoRa.init())			{	Serial.println("LoRa Radio: init failed.");		return(1);	}
-	else						{	Serial.println("LoRa Radio: init OK!");			return(0);	}
+	else
+	{
+		Serial.println("LoRa Radio: init OK!");						
+		SetLoRaMode(lora_mode);
+		
+	#if USE_FREERTOS	
+		xTaskCreatePinnedToCore(LoRaTask,"LoRa Task",2048,NULL,2,NULL,0);
+//		xTaskCreate(LoRaTask,"LoRa Task",2048,NULL,2,NULL);
+		Serial.println("Created LoRa Task");
+	#endif
+	}
 #endif
-	
-	SetLoRaMode(lora_mode);
-	
-#if USE_FREERTOS	
-	xTaskCreate(LoRaTask,"LoRa Task",2048,NULL,2,NULL);
 
-
-
-#endif
+	return(0);
 }
 
 void onTxDone()
@@ -110,8 +124,9 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					LoRa.dumpRegisters(Serial);
 #endif
 #if USE_RADIOHEAD
-
+					LoRa.printRegisters();
 #endif
+					
 					break;
 		
 		case 'x':	Serial.print("High Rate  SF     - ");	Serial.println(hr_sf);
@@ -142,7 +157,9 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					
 		case 'g':	Serial.println("Transmitting GPS LoRa packet");
 					PackPacket(TxPacket,&TxPacketLength);
+					DumpHexPacket(TxPacket,TxPacketLength,true);
 					EncryptPacket(TxPacket);
+					DumpHexPacket(TxPacket,TxPacketLength,true);
 					LoRaTransmitSemaphore=1;
 					
 					if(strcmp(lora_mode,"Long Range")==0)	led_control(0xf0f0f0f0,0);
@@ -169,11 +186,11 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					break;
 		
 		case '+':	lora_offset+=1.0;
-					Serial.printf("LoRa offset = %.1f\n",lora_offset);
+					Serial.printf("LoRa offset = %.1f KHz\r\n",lora_offset);
 					break;
 		
 		case '-':	lora_offset-=1.0;
-					Serial.printf("LoRa offset = %.1f\n",lora_offset);
+					Serial.printf("LoRa offset = %.1f KHz\r\n",lora_offset);
 					break;
 		
 		case 'v':	Serial.print("LoRa version: ");
@@ -244,10 +261,15 @@ int HighRateCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 
 void SetLoRaMode(char *mode)
 {
-	LoRa.setFrequency(lora_freq+lora_offset*1e3);
+	if(lora_freq>1e6)	lora_freq/=1e6;
+	
+	Serial.print("Setting frequency to ");
+	Serial.print(lora_freq+lora_offset/1e3,3);
+	Serial.println(" MHz");
+	LoRa.setFrequency(lora_freq+lora_offset/1e3);
 
 #if LOW_POWER_TRANSMIT
-	LoRa.setTxPower(5);
+	LoRa.setTxPower(0);
 #else
 	LoRa.setTxPower(17);
 #endif
@@ -280,7 +302,12 @@ void SetLoRaMode(char *mode)
 	{	
 		Serial.println("Duff LoRa mode selected!");
 	}
-	
+
+#if 0	
+	LoRa.setSpreadingFactor(7);
+	LoRa.setSignalBandwidth(125000);
+	LoRa.setCodingRate4(8);
+#endif
 #if USE_ARDUINO_LORA
 	if(lora_crc)	LoRa.enableCrc();
 	else			LoRa.disableCrc();
@@ -293,36 +320,46 @@ void SetLoRaMode(char *mode)
 void PollLoRa(void)
 {
 	// scale to Hz if our data is in MHz
-	if(lora_freq<1e6)	lora_freq*=1e6;
+	if(lora_freq>1e6)	lora_freq/=1e6;
 	
 	if(LoRaTransmitSemaphore)
 	{
-		Serial.print("Starting tx ...");
-		TXStartTimeMillis=millis();
+		Serial.println("Starting tx ...");
+//		TXStartTimeMillis=millis();
 
-		tx_active=1;
-		SetTXIndicator(tx_active);
+//		Serial.println("Setting tx_active");
+//		tx_active=1;
+//		SetTXIndicator(tx_active);
 		
 #if 0
 		Serial.println("Setting LoRa parameters");
-		LoRa.setTxPower(5);
 		SetLoRaMode(lora_mode);		
 #endif		
-
-		LoRa.setFrequency(lora_freq+lora_offset*1e3);
-
+#if 0
+		Serial.println("Setting the transmit frequency");
+		LoRa.setFrequency(lora_freq+lora_offset/1e3);
+#endif
+#if 0
 #if USE_ARDUINO_LORA
 		LoRa.beginPacket(false);
 		LoRa.write(TxPacket,TxPacketLength);
 		LoRa.endPacket(true);
 #endif
 #if USE_RADIOHEAD
+		Serial.print("Sending ");
+		DumpHexPacket(TxPacket,TxPacketLength,false);
+		Serial.print(", ");
+		Serial.print(TxPacketLength);
+		Serial.println(" bytes");
+
 		LoRa.send(TxPacket,TxPacketLength);
 #endif
-		
-		LoRaTransmitSemaphore=0;
+#endif
+//		Serial.println("Setting the transmit semaphore off");
+//		LoRaTransmitSemaphore=0;
 	}
 
+#if 0
 	if(LoRaTXDoneSemaphore)
 	{
 		Serial.print("\t\tlora tx done in ");
@@ -333,6 +370,7 @@ void PollLoRa(void)
 		tx_active=0;
 		SetTXIndicator(tx_active);
 	}
+#endif
 }
 
 void LoRaTask(void *pvParameters)
@@ -340,34 +378,57 @@ void LoRaTask(void *pvParameters)
 	while(1)
 	{
 		// scale to Hz if our data is in MHz
-		if(lora_freq<1e6)	lora_freq*=1e6;
+		if(lora_freq>1e6)	lora_freq/=1e6;
 		
 		if(LoRaTransmitSemaphore)
 		{
-			Serial.print("Starting tx ...");
-			TXStartTimeMillis=millis();
+			Serial.println("Starting tx ...");
 
-			tx_active=1;
-			SetTXIndicator(tx_active);
-			
-#if 0
+//			tx_active=1;
+//			SetTXIndicator(tx_active);
+
+//			LoRa.setModemConfig(RH_RF95::Bw31_25Cr48Sf512);
+
+#if 0			
+			Serial.println("Setting LoRa parameters");
 			SetLoRaMode(lora_mode);		
-#endif		
+#endif
+			
+			Serial.println("Setting the transmit frequency");
+			LoRa.setFrequency(lora_freq+lora_offset/1e3);
 
-			LoRa.setFrequency(lora_freq+lora_offset*1e3);
-
+			TXStartTimeMillis=millis();
 #if USE_ARDUINO_LORA
 			LoRa.beginPacket(false);
 			LoRa.write(TxPacket,TxPacketLength);
 			LoRa.endPacket(true);
 #endif
 #if USE_RADIOHEAD
+			Serial.print("Sending ");
+			DumpHexPacket(TxPacket,TxPacketLength,false);
+			Serial.print(", ");
+			Serial.print(TxPacketLength);
+			Serial.println(" bytes");
+
 			LoRa.send(TxPacket,TxPacketLength);
 #endif
 			
+			Serial.println("Waiting for packet sent ...");
+			while(!LoRa.waitPacketSent(1))
+				delay(1);
+			
+			Serial.print("Tx done in ");
+			Serial.print(millis()-TXStartTimeMillis);
+			Serial.println(" ms");
+			
+			Serial.println("Setting the transmit semaphore off");
 			LoRaTransmitSemaphore=0;
+
+			LoRaTXDoneSemaphore=false;
+			tx_active=0;
 		}
 
+#if 0
 		if(LoRaTXDoneSemaphore)
 		{
 			Serial.print("\t\tlora tx done in ");
@@ -378,7 +439,8 @@ void LoRaTask(void *pvParameters)
 			tx_active=0;
 			SetTXIndicator(tx_active);
 		}
-		
+#endif
+				
 		delay(1);
 	}
 }
