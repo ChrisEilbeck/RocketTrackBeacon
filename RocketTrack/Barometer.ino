@@ -76,15 +76,14 @@ int SetupBarometer(void)
 	Serial.println("Barometer configured\n");
 
 #ifdef USE_FREERTOS	
-	xTaskCreatePinnedToCore(PollBarometer,"Barometer Task",2048,NULL,2,NULL,0);
-//	xTaskCreate(PollBarometer,"Barometer Task",2048,NULL,2,NULL);
+	xTaskCreatePinnedToCore(BarometerTask,"Barometer Task",2048,NULL,2,NULL,0);
+//	xTaskCreate(BarometerTask,"Barometer Task",2048,NULL,2,NULL);
 #endif
 	
 	return(0);
 }
 
-#ifdef USE_FREERTOS
-void PollBarometer(void *pvParameters)
+void BarometerTask(void *pvParameters)
 {
 	// sample the barometer for a second, average and use that as the launch altitude
 
@@ -133,7 +132,7 @@ void PollBarometer(void *pvParameters)
 		}		
 	}
 }
-#else
+
 void PollBarometer(void)
 {
 	if(baro_enable)
@@ -149,7 +148,6 @@ void PollBarometer(void)
 		ss.baro_altitude=0.0f;	ss.baro_pressure=0.0f;	ss.baro_temperature=0.0f;	ss.baro_humidity=0.0f;
 	}
 }
-#endif
 
 void ReadBarometer(void)
 {
