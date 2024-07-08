@@ -145,24 +145,7 @@ int SetupGPS(void)
 	SetupGPSMessages();
 
 #ifdef USE_FREERTOS
-	// Create the queue which will have <QueueElementSize> number of elements, each of size `message_t` and pass the address to <QueueHandle>.
-	QueueHandle=xQueueCreate(QueueElementSize,sizeof(message_t));
-
-	// Check if the queue was successfully created
-	if(QueueHandle==NULL)
-	{
-    	Serial.println("Queue could not be created. Halt.");
-    	while(1)
-    	{
-    		delay(1000);  // Halt at this point as is not possible to continue
-		}
-	}
-	
 	xTaskCreatePinnedToCore(GPSReceiveTask,"GPS Input Task",20480,NULL,2,NULL,0);
-//	xTaskCreatePinnedToCore(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL,0);
-
-//	xTaskCreate(GPSReceiveTask,"GPS Inpur Task",2048,NULL,2,NULL);
-//	xTaskCreate(GPSParserTask,"GPS Parser Task",2048,NULL,2,NULL);
 #endif
 	
 	return(0);
@@ -200,6 +183,13 @@ void SetupGPSMessages(void)
 							break;
 						
 		case GPS_MTK333x:	Serial.println("\tMTX333X GPS Receiver selected\n");
+							
+							// set up for standard messages initially,
+							// GxGGA, GxRMC, GxGSA, GxGSV etc.
+							
+							
+							
+							
 							break;
 	
 		default:			// assume this is just a generic GPS and leave the
@@ -209,36 +199,52 @@ void SetupGPSMessages(void)
 	}
 }
 
-#ifdef USE_FREERTOS
+void ReconfigureGPSMessages(void)
+{
+
+
+
+}
+
 void GPSReceiveTask(void *pvParameters)
 {
 	char rxbyte;
 	char buffer[256];
 	int bufferptr=0;
+	int last_poor_fix=millis();
+	bool gps_reconfigured=false;
 	
 	while(1)
 	{
 		xSemaphoreTake(i2c_mutex,portMAX_DELAY);
 
-//		int bytecount=0;
-//		message_t message;
-		
 		if(GPSSerialPort.available())
 		{
 			rxbyte=GPSSerialPort.read();
-
-//			gpsparser.process(rxbyte);
-//			gpsparser.encode(rxbyte);
-			
 			xSemaphoreGive(i2c_mutex);
 
 			if(gps_live_mode)
 				Serial.write(rxbyte);
 
-#if 1
 			if(GPSSerialPort.newNMEAreceived())
 			{
 				GPSSerialPort.parse(GPSSerialPort.lastNMEA());
+				
+				if(!gps_reconfigured)
+				{
+					if(		(GPSSerialPort.fixquality_3d==3)
+						&&	(GPSSerialPort.satellites>=5)
+						&&	((millis()-last_poor_fix)>=5000)		)
+					{
+						// we have had a good 3d fix with at least 5 seconds so
+						// reconfigure the GPS for high rate measurements and
+						// only outputting GxGGA messages
+						
+						ReconfigureGPSMessages();
+					}
+					else
+						last_poor_fix=millis();
+				}
 				
 				ss.gps_latitude=GPSSerialPort.latitudeDegrees;
 				ss.gps_longitude=GPSSerialPort.longitudeDegrees;
@@ -246,44 +252,19 @@ void GPSReceiveTask(void *pvParameters)
 				
 				if(ss.gps_max_altitude<ss.gps_altitude)
 					ss.gps_max_altitude=ss.gps_altitude;				
-				
+			
+#if 0	
 				Serial.print(GPSSerialPort.latitudeDegrees,6);
 				Serial.print(", ");
 				Serial.print(GPSSerialPort.longitudeDegrees,6);
 				Serial.print(", ");
-				Serial.println(GPSSerialPort.altitude,1);				
-			}
+				Serial.println(GPSSerialPort.altitude,1);
 #endif
-#if 0
-			if(gpsparser.location.isUpdated())
-			{			
-				ss.gps_latitude=gpsparser.location.lat();
-				ss.gps_longitude=gpsparser.location.lng();
-				
-#if 0				
-				Serial.print(ss.gps_latitude,6);
-				Serial.print(", ");
-				Serial.println(ss.gps_longitude,6);
-#endif
-				
-				ss.battery_voltage=4.200;
-				ss.gps_numsats=7;
-				ss.gps_fix=3;
 			}
+
+			// could potentially ditch this and just tag sampling the other
+			// sensors into the above new NMEA routine
 			
-			if(gpsparser.altitude.isUpdated())
-			{
-				ss.gps_altitude=gpsparser.altitude.meters();
-				if(ss.gps_max_altitude<ss.gps_altitude)
-					ss.gps_max_altitude=ss.gps_altitude;
-
-#if 0
-				Serial.print(ss.gps_altitude,1);
-				Serial.println(" m");
-#endif
-			}
-#endif
-
 			static int state=0;			
 			switch(state)
 			{
@@ -319,56 +300,16 @@ void GPSReceiveTask(void *pvParameters)
 				default:	state=0;
 							break;
 			}
-
-			
-//			if(gpsparser.process(rxbyte))
-//			{
-//				Serial.println(gpsparser.getSentence());
-//			}
-
-//			if(gpsparser.encode(rxbyte))
-//			{
-//				buffer[bufferptr]=0;
-//				Serial.println(buffer);			
-//				bufferptr=0;
-//			}	
 		}
 		else
 		{
 			xSemaphoreGive(i2c_mutex);
-//			delay(1);
 		}
 		
 		delay(1);
 	}
 }
 
-void GPSParserTask(void *pvParameters)
-{
-	
-	while(1)
-	{
-		// One approach would be to poll the function (uxQueueMessagesWaiting(QueueHandle) and call delay if nothing is waiting.
-		// The other approach is to use infinite time to wait defined by constant `portMAX_DELAY`:
-		if(QueueHandle!=NULL)	// Sanity check just to make sure the queue actually exists
-		{
-			message_t message;
-			int ret=xQueueReceive(QueueHandle,&message,portMAX_DELAY);
-			if(ret==pdPASS)
-      		{
-      			// The message was successfully received - send it back to Serial port and "Echo: "
-				Serial.print(message.rxbytes);
-			}
-			else if(ret==pdFALSE)
-			{
-				Serial.println("The `TaskWriteToSerial` was unable to receive data from the Queue");
-			}
-		}  // Sanity check
-		
-		delay(1);
-	}
-}
-#else
 void PollGPS(void)
 {
 	char rxbyte;
@@ -381,10 +322,6 @@ void PollGPS(void)
 			Serial.write(rxbyte);
 	}
 }
-#endif
-
-
-
 
 int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 {

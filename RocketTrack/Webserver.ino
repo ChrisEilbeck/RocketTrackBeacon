@@ -53,13 +53,21 @@ String processor(const String& var)
 	}
 	else if(var=="BAT_STATUS")
 	{
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 		if(axp.isChargeingEnable())
 			sprintf(buffer,"\"Charging\"");
 		else
 			sprintf(buffer,"\"Discharging\"");
+#else
+		if(ss.battery_voltage>=3800)
+			sprintf(buffer,"\"OK\"");
+		else
+			sprintf(buffer,"\"Low\"");
+#endif
 	}
 	else if(var=="BAT_CURRENT")
 	{
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 /*
 		if(axp.isChargeingEnable())
 			sprintf(buffer,"%.1f",axp.getBattChargeCurrent());
@@ -67,10 +75,13 @@ String processor(const String& var)
 			sprintf(buffer,"%.1f",axp.getBattDischargeCurrent());
 */
 		sprintf(buffer,"%.1f",axp.getBattChargeCurrent()/1e3);
+#else
+		sprintf(buffer,"Not known");
+#endif
 	}
 	else if(var=="BAT_VOLTAGE")
 	{
-		sprintf(buffer,"%.3f",axp.getBattVoltage()/1000);
+		sprintf(buffer,"%.3f",ss.battery_voltage/1000);
 	}
 #if 0
 	else if(var=="LATITUDE")

@@ -6,7 +6,9 @@ bool PMIC_semaphore=false;
 bool short_button_press=false;
 bool long_button_press=false;
 
-AXP20X_Class axp;
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+	AXP20X_Class axp;
+#endif
 
 void PMIC_Interrupt(void)
 {
@@ -132,9 +134,9 @@ int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	return(retval);
 }
 
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 void ControlLED(axp_chgled_mode_t Mode)
 {
-#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 //	Serial.print("ControlLED() entry\r\n");
 	
 	static axp_chgled_mode_t OldMode=AXP20X_LED_OFF;
@@ -146,6 +148,6 @@ void ControlLED(axp_chgled_mode_t Mode)
 	}
 	
 //	Serial.print("ControlLED() exit\r\n");
-#endif
 }
+#endif
 
