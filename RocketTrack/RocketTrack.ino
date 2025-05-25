@@ -124,7 +124,7 @@ void setup()
 	SetupOnePPS();
 	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
-#if 1
+#if 0
 	Serial.println(crypto_key_hex);
 	DumpHexPacket(crypto_key,32);
 #endif
