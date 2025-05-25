@@ -80,12 +80,12 @@ void PollScheduler(void)
 			
 			if(strcmp(lora_mode,"Long Range")==0)
 			{
-				next_transmit=millis()+10000;
+				next_transmit=millis()+30000;
 				led_control(0xf0f0f0f0,1);
 			}
 			else
 			{
-				next_transmit=millis()+200;
+				next_transmit=millis()+1000;
 				led_control(0xaaaaaaaa,1);
 			}
 			
