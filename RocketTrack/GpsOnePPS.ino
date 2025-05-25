@@ -1,7 +1,7 @@
 
 #include "HardwareAbstraction.h"
 
-int firsttime=1;
+bool firsttime=true;
 
 int ticksemaphore=0;
 unsigned long int ticktime_micros=0;
@@ -39,19 +39,29 @@ void PollOnePPS(void)
 }
 
 void OnePPS_adjust(void)
-{
+{	
 	static unsigned long int last_millis;
 	static unsigned long int last_micros;
-
-	static long int rect[NUMPTS]={0};
-	static int cnt=0;
 		
 	if(firsttime)
 	{
+		micros_offset=micros()%1000000;
+		millis_offset=1000+millis()%1000;
+		
 		last_millis=ticktime_millis-1000;
 		last_micros=ticktime_micros-1000000;
-		firsttime=0;
+		
+		firsttime=false;
+		
+		return;
 	}
+
+	static long int rect[NUMPTS]={0};
+	static int cnt=0;
+	
+#if 0
+	Serial.print("tick\t");
+#endif
 
 	// adjust the micros() timer
 	
@@ -75,33 +85,42 @@ void OnePPS_adjust(void)
 		mean+=rect[i];
 	
 	mean/=NUMPTS;
-	micros_offset-=mean;
+	micros_offset+=mean;
 
 	cnt++;
 	if(cnt>=NUMPTS)
 		cnt=0;
 
-#if 0
-	Serial.print(micros_offset);
-	Serial.print("\t\t");
-#endif
-	
 	last_micros=ticktime_micros;
 	
+#if 0
+	Serial.print("micros_offset = ");
+	Serial.print(micros_offset);
+	Serial.print("\t");
+#endif
+		
 	// adjust the millis() timer
 	
 #if 0
-//	Serial.print(ticktime_millis-last_millis-1000);
-//	Serial.print("\t");
+	Serial.print(ticktime_millis-last_millis-1000);
+	Serial.print("\t");
 #endif
 	
-//	millis_offset-=ticktime_millis-last_millis-1000;
-
+	millis_offset+=ticktime_millis-last_millis-1000;
 	last_millis=ticktime_millis;
 
 #if 0
-	Serial.print("tick\r\n");
+	Serial.print("millis_offset = ");
+	Serial.print(millis_offset);
+	Serial.print("\t");
 #endif
+#if 0
+	Serial.print(micros_1pps());
+	Serial.print("\t");
+	Serial.print(millis_1pps());
+#endif
+
+	Serial.println("");
 }
 
 unsigned long int millis_1pps(void)
@@ -111,6 +130,6 @@ unsigned long int millis_1pps(void)
 
 unsigned long int micros_1pps(void)
 {
-	return(micros()+micros_offset);
+	return(micros()-micros_offset);
 }
 
