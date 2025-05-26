@@ -237,13 +237,14 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 
 void i2c_bus_scanner(void)
 {
-	byte error, address;
+	byte error;
+	byte address;
 	int nDevices;
 	
 	Serial.println("Scanning...");
 	
-	nDevices = 0;
-	for(address = 1; address < 127; address++ ) 
+	nDevices=0;
+	for(address=1;address<127;address++) 
 	{
 		// The i2c_scanner uses the return value of
 		// the Write.endTransmisstion to see if
@@ -251,34 +252,41 @@ void i2c_bus_scanner(void)
 		Wire.beginTransmission(address);
 		error = Wire.endTransmission();
 		
-		if (error == 0)
+		if(error==0)
 		{
 			Serial.print("I2C device found at address 0x");
-			if (address<16) 
+			if(address<16) 
 				Serial.print("0");
 			Serial.print(address,HEX);
-			Serial.println("  !");
-
+			
+			if(address==0x0c)	Serial.print("\tAK8963 Magnetometer");
+			if(address==0x0d)	Serial.print("\tQMC5883L Magnetometer");
+			if(address==0x1e)	Serial.print("\tHMC5883L Magnetometer");
+			if(address==0x34)	Serial.print("\tAXP192 PMIC");
+			if(address==0x3C)	Serial.print("\tSSD1306 OLED Display");
+			if(address==0x3D)	Serial.print("\tSSD1306 OLED Display");
+			if(address==0x68)	Serial.print("\tMPU6050 Accelerometer/Gyro");
+			if(address==0x69)	Serial.print("\tMPU6050 Accelerometer/Gyro");
+			if(address==0x76)	Serial.print("\tBMP280 Barometer");
+			if(address==0x77)	Serial.print("\tBMP280 Barometer");
+			
+			Serial.println("");
+			
 			nDevices++;
 		}
-		else if (error==4) 
+		else if(error==4) 
 		{
 			Serial.print("Unknown error at address 0x");
-			if (address<16) 
+			if(address<16) 
 				Serial.print("0");
 			Serial.println(address,HEX);
 		}    
 	}
 	
-	if (nDevices == 0)
+	if(nDevices==0)
 		Serial.println("No I2C devices found\n");
 	else
 		Serial.println("done\n");
-
-	//	I2C device found at address 0x34  !		// AXP192 PMIC
-	//	I2C device found at address 0x3C  !		// OLED Display
-	//	I2C device found at address 0x68  !		// MPU6050 Accelerometer/Magnetometer/Gyro
-	//	I2C device found at address 0x76  !		// BME280 pressure sensor  
 }
 
 bool IRAM_ATTR TinerHandler0(void *timerNo)
