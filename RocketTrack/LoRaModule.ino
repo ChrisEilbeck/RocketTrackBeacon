@@ -89,6 +89,36 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	
 	switch(cmd[1]|0x20)
 	{
+		case '1':	lora_freq=LORA_CH1;
+					Serial.println("Setting to LoRa Channel 1");
+					retval=1;
+					break;
+
+		case '2':	lora_freq=LORA_CH2;
+					Serial.println("Setting to LoRa Channel 2");
+					retval=1;
+					break;
+
+		case '3':	lora_freq=LORA_CH3;
+					Serial.println("Setting to LoRa Channel 3");
+					retval=1;
+					break;
+
+		case '4':	lora_freq=LORA_CH4;
+					Serial.println("Setting to LoRa Channel 4");
+					retval=1;
+					break;
+
+		case '5':	lora_freq=LORA_CH5;
+					Serial.println("Setting to LoRa Channel 5");
+					retval=1;
+					break;
+
+		case '6':	lora_freq=LORA_CH6;
+					Serial.println("Setting to LoRa Channel 6");
+					retval=1;
+					break;
+
 		case 'd':	Serial.println("Dumping LoRa registers");
 					LoRa.dumpRegisters(Serial);
 					break;
@@ -130,6 +160,11 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					
 					break;
 		
+		case 'i':	lastfix.id=atoi((const char *)&cmd[3]);
+					Serial.print("Setting LoRa beacon id to ");
+					Serial.println(lastfix.id);
+					break;
+		
 		case 'l':	Serial.println("Long range mode");
 					strcpy(lora_mode,"Long Range");
 					SetLoRaMode(lora_mode);
@@ -157,12 +192,13 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					break;
 		
 		case '?':	Serial.print("LoRa Test Harness\r\n================\r\n\n");
-					Serial.print("t\t-\tTransmit a test packet\r\n");
+					Serial.print("1..6\t-\tSet LoRa Channel\r\n");
+					Serial.print("c\t-\tConstant Transmit on/off\r\n");
 					Serial.print("g\t-\tTransmit a GPS packet\r\n");
 					Serial.print("h\t-\tSet high rate mode\r\n");
 					Serial.print("l\t-\tSet long range mode\r\n");
 					Serial.print("m\t-\tCheck operating mode\r\n");
-					Serial.print("c\t-\tConstant Transmit on/off\r\n");
+					Serial.print("t\t-\tTransmit a test packet\r\n");
 					Serial.print("+\t-\tIncrement LoRa offset\r\n");
 					Serial.print("-\t-\tDecrement LoRa offset\r\n");
 					Serial.print("?\t-\tShow this menu\r\n");
