@@ -221,8 +221,8 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 					Serial.print("e\t-\tLed Commands\r\n");
 					Serial.print("n\t-\tNeopixel Commands\r\n");
 					Serial.print("b\t-\tBeeper Commands\r\n");
-					Serial.print("t\t-\tTransmitter Mode\r\n");
-					Serial.print("r\t-\tReceiver Mode\r\n");
+//					Serial.print("t\t-\tTransmitter Mode\r\n");
+//					Serial.print("r\t-\tReceiver Mode\r\n");
 					Serial.print("?\t-\tShow this menu\r\n");
 					OK=1;
 					break;
@@ -291,9 +291,6 @@ void i2c_bus_scanner(void)
 
 bool IRAM_ATTR TinerHandler0(void *timerNo)
 {
-
-
-
 	return(true);
 }
 

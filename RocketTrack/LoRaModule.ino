@@ -119,10 +119,54 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					retval=1;
 					break;
 
+		case 'c':	lora_constant_transmit=!lora_constant_transmit;
+					Serial.printf("Setting constant transmit mode to %d\r\n",lora_constant_transmit);
+					break;
+		
 		case 'd':	Serial.println("Dumping LoRa registers");
 					LoRa.dumpRegisters(Serial);
 					break;
 		
+		case 'g':	Serial.println("Transmitting GPS LoRa packet");
+					PackPacket(TxPacket,&TxPacketLength);
+					EncryptPacket(TxPacket);
+					LoRaTransmitSemaphore=1;
+					
+					if(strcmp(lora_mode,"Long Range")==0)	led_control(0xf0f0f0f0,0);
+					else									led_control(0xaa000000,0);
+					
+					break;
+		
+		case 'h':	Serial.println("High rate mode");
+					strcpy(lora_mode,"High Rate");
+					SetLoRaMode(lora_mode);
+					break;
+		
+		case 'i':	lastfix.id=atoi((const char *)&cmd[3]);
+					Serial.print("Setting LoRa beacon id to ");
+					Serial.println(lastfix.id);
+					break;
+		
+		case 'l':	Serial.println("Long range mode");
+					strcpy(lora_mode,"Long Range");
+					SetLoRaMode(lora_mode);
+					break;
+		
+		case 'm':	Serial.print(lora_mode);
+					Serial.print(" mode\r\n");
+					break;
+					
+		case 't':	Serial.println("Transmitting LoRa packet");
+					memcpy(TxPacket,"Hello, world ...",16);
+					EncryptPacket(TxPacket);
+					TxPacketLength=16;
+					LoRaTransmitSemaphore=1;
+					
+					if(strcmp(lora_mode,"Long Range")==0)	led_control(0xf0f0f0f0,0);
+					else									led_control(0xaa000000,0);
+					
+					break;
+					
 		case 'x':	Serial.print("High Rate  SF     - ");	Serial.println(hr_sf);
 					Serial.print("           BW     - ");	Serial.println(hr_bw);
 					Serial.print("           CR     - ");	Serial.println(hr_cr);
@@ -138,67 +182,24 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 		
 					break;
 		
-		case 't':	Serial.println("Transmitting LoRa packet");
-					memcpy(TxPacket,"Hello, world ...",16);
-					EncryptPacket(TxPacket);
-					TxPacketLength=16;
-					LoRaTransmitSemaphore=1;
-					
-					if(strcmp(lora_mode,"Long Range")==0)	led_control(0xf0f0f0f0,0);
-					else									led_control(0xaa000000,0);
-					
-					break;
-					
-		case 'g':	Serial.println("Transmitting GPS LoRa packet");
-					PackPacket(TxPacket,&TxPacketLength);
-					EncryptPacket(TxPacket);
-//					TxPacketLength=16;
-					LoRaTransmitSemaphore=1;
-					
-					if(strcmp(lora_mode,"Long Range")==0)	led_control(0xf0f0f0f0,0);
-					else									led_control(0xaa000000,0);
-					
-					break;
-		
-		case 'i':	lastfix.id=atoi((const char *)&cmd[3]);
-					Serial.print("Setting LoRa beacon id to ");
-					Serial.println(lastfix.id);
-					break;
-		
-		case 'l':	Serial.println("Long range mode");
-					strcpy(lora_mode,"Long Range");
-					SetLoRaMode(lora_mode);
-					break;
-		
-		case 'h':	Serial.println("High rate mode");
-					strcpy(lora_mode,"High Rate");
-					SetLoRaMode(lora_mode);
-					break;
-		
-		case 'm':	Serial.print(lora_mode);
-					Serial.print(" mode\r\n");
-					break;
-					
-		case 'c':	lora_constant_transmit=!lora_constant_transmit;
-					Serial.printf("Setting constant transmit mode to %d\r\n",lora_constant_transmit);
-					break;
-		
-		case '+':	lora_offset+=1.0;
+		case '+':	lora_offset+=100.0;
 					Serial.printf("LoRa offset = %.1f\n",lora_offset);
 					break;
 		
-		case '-':	lora_offset-=1.0;
+		case '-':	lora_offset-=100.0;
 					Serial.printf("LoRa offset = %.1f\n",lora_offset);
 					break;
 		
 		case '?':	Serial.print("LoRa Test Harness\r\n================\r\n\n");
 					Serial.print("1..6\t-\tSet LoRa Channel\r\n");
 					Serial.print("c\t-\tConstant Transmit on/off\r\n");
+					Serial.print("d\t-\tDump LoRa registers\r\n");
 					Serial.print("g\t-\tTransmit a GPS packet\r\n");
 					Serial.print("h\t-\tSet high rate mode\r\n");
 					Serial.print("l\t-\tSet long range mode\r\n");
 					Serial.print("m\t-\tCheck operating mode\r\n");
 					Serial.print("t\t-\tTransmit a test packet\r\n");
+					Serial.print("x\t-\tDisplay LoRa parameters\r\n");
 					Serial.print("+\t-\tIncrement LoRa offset\r\n");
 					Serial.print("-\t-\tDecrement LoRa offset\r\n");
 					Serial.print("?\t-\tShow this menu\r\n");
