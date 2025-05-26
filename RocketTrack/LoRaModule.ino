@@ -51,10 +51,23 @@ int SetupLoRa(void)
     LoRa.setPins(LORA_NSS,LORA_RESET,LORA_DIO0);
 	LoRa.onTxDone(onTxDone);
 	
-	if(!LoRa.begin(lora_freq))	{	Serial.println("Starting LoRa module failed!");	return(1);	}
-	else						{	Serial.println("Started LoRa module ok ...");	return(0);	}
+	if(lora_freq<1e6)	lora_freq*=1e6;
+	
+	Serial.print("Setting LoRa frequency to ");
+	Serial.print(lora_freq/1e6,3);
+	Serial.println(" MHz");
+	
+	if(!LoRa.begin(lora_freq))
+	{
+		Serial.println("Starting LoRa module failed!");
+		return(1);
+	}
+	
+	Serial.println("Started LoRa module ok ...");
 	
 	SetLoRaMode(lora_mode);
+	
+	return(0);
 }
 
 void onTxDone()

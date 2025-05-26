@@ -24,10 +24,11 @@ void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 	
 	static uint16_t packetcounter=0;
 	uint8_t packet[16];
-	
+
+#if 0	
 	Serial.printf("TX latitude = %.6f\r\n",lastfix.latitude);
 	Serial.printf("TX longitude = %.6f\r\n",lastfix.longitude);
-	
+#endif
 #if 0
 	float latitude=lastfix.latitude/1e7;
 	float longitude=lastfix.longitude/1e7;
