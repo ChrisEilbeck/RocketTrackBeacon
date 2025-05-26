@@ -1,4 +1,3 @@
-
 uint8_t batvolt=0x00;
 bool livepmicdata=false;
 bool PMIC_semaphore=false;
@@ -67,12 +66,12 @@ void PollPMIC(void)
 
 	if(millis()>updateat)
 	{
-		beaconvoltage=axp.getBattVoltage();
+		lastfix.voltage=axp.getBattVoltage();
 		float batterycurrent=axp.getBattChargeCurrent();
 		
 		if(livepmicdata)
 		{
-			Serial.printf("Battery voltage = %.1f mV",beaconvoltage);
+			Serial.printf("Battery voltage = %.1f mV",lastfix.voltage);
 			if(axp.isChargeing())	{	Serial.printf(", charging at %.1f mA ...\r\n",batterycurrent);	}
 			else					{	Serial.print("\r\n");												}
 		}

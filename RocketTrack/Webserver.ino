@@ -46,19 +46,25 @@ String processor(const String& var)
 	}
 	else if(var=="LATITUDE")
 	{
-		if(beaconlat>0)	sprintf(buffer,"%2.6f N",beaconlat/1e7);	else	sprintf(buffer,"%2.6f S",-beaconlat/1e7);
+		if(lastfix.latitude>0)
+			sprintf(buffer,"%2.6f N",lastfix.latitude/1e7);
+		else
+			sprintf(buffer,"%2.6f S",-lastfix.latitude/1e7);
 	}
 	else if(var=="LONGITUDE")
 	{
-		if(beaconlon>0)	sprintf(buffer,"%3.6f E",beaconlon/1e7);	else	sprintf(buffer,"%3.6f W",-beaconlon/1e7);
+		if(lastfix.longitude>0)	
+			sprintf(buffer,"%3.6f E",lastfix.longitude/1e7);
+		else
+			sprintf(buffer,"%3.6f W",-lastfix.longitude/1e7);
 	}
 	else if(var=="ALTITUDE")
 	{
-		sprintf(buffer,"%.1f",beaconheight/1e3);
+		sprintf(buffer,"%.1f",lastfix.height/1e3);
 	}
 	else if(var=="NUM_CHANNELS")
 	{
-		sprintf(buffer,"%d",beaconnumsats);
+		sprintf(buffer,"%d",lastfix.numsats);
 	}
 	else if(var=="GPS_FIX")
 	{
@@ -66,14 +72,14 @@ String processor(const String& var)
 	}
 	else if(var=="HORIZONTAL_ACCURACY")
 	{
-		sprintf(buffer,"%.1f",beaconhacc);
+		sprintf(buffer,"%.1f",lastfix.accuracy);
 	}
 	else if(var=="SAT_NUMS")
 	{
 		int cnt=0;
-		for(cnt=0;cnt<beaconnumsats;cnt++)
+		for(cnt=0;cnt<lastfix.numsats;cnt++)
 		{
-			if(cnt!=(beaconnumsats-1))
+			if(cnt!=(lastfix.numsats-1))
 				sprintf(buffer+strlen(buffer),"%d,",svid[cnt]);
 			else
 				sprintf(buffer+strlen(buffer),"%d",svid[cnt]);
@@ -82,9 +88,9 @@ String processor(const String& var)
 	else if(var=="SAT_ELEVS")
 	{
 		int cnt=0;
-		for(cnt=0;cnt<beaconnumsats;cnt++)
+		for(cnt=0;cnt<lastfix.numsats;cnt++)
 		{
-			if(cnt!=(beaconnumsats-1))
+			if(cnt!=(lastfix.numsats-1))
 				sprintf(buffer+strlen(buffer),"%d,",elev[cnt]);
 			else
 				sprintf(buffer+strlen(buffer),"%d",elev[cnt]);
@@ -93,9 +99,9 @@ String processor(const String& var)
 	else if(var=="SAT_AZS")
 	{
 		int cnt=0;
-		for(cnt=0;cnt<beaconnumsats;cnt++)
+		for(cnt=0;cnt<lastfix.numsats;cnt++)
 		{
-			if(cnt!=(beaconnumsats-1))
+			if(cnt!=(lastfix.numsats-1))
 				sprintf(buffer+strlen(buffer),"%d,",azim[cnt]);
 			else
 				sprintf(buffer+strlen(buffer),"%d",azim[cnt]);
@@ -104,9 +110,9 @@ String processor(const String& var)
 	else if(var=="SAT_SNRS")
 	{
 		int cnt=0;
-		for(cnt=0;cnt<beaconnumsats;cnt++)
+		for(cnt=0;cnt<lastfix.numsats;cnt++)
 		{
-			if(cnt!=(beaconnumsats-1))
+			if(cnt!=(lastfix.numsats-1))
 				sprintf(buffer+strlen(buffer),"%d,",cno[cnt]);
 			else
 				sprintf(buffer+strlen(buffer),"%d",cno[cnt]);

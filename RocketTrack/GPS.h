@@ -9,7 +9,6 @@ extern int fix_rate;
 extern uint8_t gpsFix;
 
 #if 0
-	extern uint8_t gps_numSats;
 
 	extern int32_t gps_lat;
 	extern int32_t gps_lon;
@@ -20,11 +19,12 @@ extern uint8_t gpsFix;
 	extern uint32_t gps_vAcc;
 
 	extern uint8_t gps_hAccValue;
-
-	extern uint16_t gps_year;
-	extern uint8_t gps_month;
-	extern uint8_t gps_day;
-	extern uint8_t gps_hour;
-	extern uint8_t gps_min;
-	extern uint8_t gps_sec;
 #endif
+
+extern uint8_t beaconnumSats;
+extern uint16_t beaconyear;
+extern uint8_t beaconmonth;
+extern uint8_t beaconday;
+extern uint8_t beaconhour;
+extern uint8_t beaconmin;
+extern uint8_t beaconsec;

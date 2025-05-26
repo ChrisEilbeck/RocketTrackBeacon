@@ -1,4 +1,6 @@
 
+#include "Packetisation.h"
+
 uint32_t next_transmit=0;
 
 int SetupScheduler(void)
@@ -52,6 +54,18 @@ void PollScheduler(void)
 		Serial.print("Setting constant transmit to ");
 		Serial.println(lora_constant_transmit);
 		
+		if(lora_constant_transmit)
+		{
+			// set the time for the next burst so it's in the correct
+			// timeslot
+			
+			next_transmit=1000*(1+millis_1pps()/1000);
+			next_transmit+=100*(lastfix.id%10);
+			
+			Serial.print("Constant transmit on in timeslot ");
+			Serial.println(lastfix.id%10);
+		}
+		
 		short_button_press=false;
 	}
 	
@@ -69,29 +83,34 @@ void PollScheduler(void)
 		long_button_press=false;
 	}
 	
-	if(millis()>=next_transmit)
+	if(millis_1pps()>=next_transmit)
 	{
 		if(		(LoRaTransmitSemaphore==0)
 			&&	(lora_constant_transmit)	)
 		{
-			PackPacket(TxPacket,&TxPacketLength);
-			EncryptPacket(TxPacket);
-			LoRaTransmitSemaphore=1;
-			
+			next_transmit=1000*(1+millis_1pps()/1000);
+			next_transmit+=100*(lastfix.id%10);
+		
+#if 0
 			if(strcmp(lora_mode,"Long Range")==0)
 			{
-				next_transmit=millis()+30000;
+				next_transmit=millis_1pps()+30000;
 				led_control(0xf0f0f0f0,1);
 			}
 			else
 			{
-				next_transmit=millis()+1000;
+				next_transmit=millis_1pps()+1000;
 				led_control(0xaaaaaaaa,1);
 			}
-			
-#if 0
-			Serial.printf("millis() = %d\r\n",millis());
+#endif			
+#if 1
+			Serial.printf("millis_1pps() = %d\r\n",millis_1pps());
 #endif
+
+			PackPacket(TxPacket,&TxPacketLength);
+			EncryptPacket(TxPacket);
+			LoRaTransmitSemaphore=1;
+			
 		}
 	}
 }

@@ -443,26 +443,27 @@ void UnpackNAVPOSLLH(uint8_t *buffer)
 #endif
 	
 	iTOW=*((uint32_t *)(buffer+6));
-	beaconlon=*((int32_t *)(buffer+10));
-	beaconlat=*((int32_t *)(buffer+14));
-	beaconheight=*((int32_t *)(buffer+18));
-	beaconhMSL=*((int32_t *)(buffer+22));
+	lastfix.longitude=*((int32_t *)(buffer+10));
+	lastfix.latitude=*((int32_t *)(buffer+14));
+//	lastfix.height=*((int32_t *)(buffer+18));
+	lastfix.height=*((int32_t *)(buffer+22));	// hMSL
 	uint32_t hacc=*((uint32_t *)(buffer+26));
 	uint32_t vacc=*((uint32_t *)(buffer+30));
 	
-	if((hacc/500)>255)	beaconhaccvalue=(float)255;
-	else				beaconhaccvalue=(float)(hacc/500);
-	
+	if((hacc/500)>255)	lastfix.accuracy=(float)255;
+	else				lastfix.accuracy=(float)(hacc/500);
+
+#if 0	
 	if(gpsFix==3)
-		if(max_beaconhMSL<beaconhMSL)
-			max_beaconhMSL=beaconhMSL;
-	
+		if(max_lastfix.height<lastfix.height)
+			max_lastfix.height=lastfix.height;
+#endif	
 #if 0
-	Serial.printf("\t\thAcc = %ld mm\n",beaconhAcc);
+	Serial.printf("\t\thAcc = %ld mm\n",lastfix.hAcc);
 #endif
 #if (DEBUG>2)
-	Serial.printf("\t\tLat = %.6f, Lon = %.6f, ",beaconlat/1e7,beaconlon/1e7);
-	Serial.printf("height = %.1f\r\n",beaconhMSL/1e3);
+	Serial.printf("\t\tLat = %.6f, Lon = %.6f, ",lastfix.lat/1e7,lastfix.lon/1e7);
+	Serial.printf("height = %.1f\r\n",lastfix.hMSL/1e3);
 #endif
 	
 	baro_trigger=true;
@@ -558,8 +559,8 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	switch(cmd[1]|0x20)
 	{
 		case 'p':	// position fix
-					Serial.printf("Lat = %.6f, Lon = %.6f, ",beaconlat/1e7,beaconlon/1e7);
-					Serial.printf("height = %.1f\r\n",beaconheight/1e3);
+					Serial.printf("Latitude = %.6f, Longitude = %.6f, ",lastfix.latitude/1e7,lastfix.longitude/1e7);
+					Serial.printf("height = %.1f\r\n",lastfix.height/1e3);
 					break;
 		
 		case 'f':	// fix status

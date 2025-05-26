@@ -90,9 +90,9 @@ void PollDisplay(void)
 		{
 			case 0 ... 5:	display.setTextSize(1);
 							display.println();
-							display.printf("Lat:\r\n %.6f\r\n",beaconlat/1e7);
-							display.printf("Lon:\r\n %.6f\r\n",beaconlon/1e7);		
-							display.printf("Altitude:\r\n %.1f m\r\n",beaconhMSL/1e3);							
+							display.printf("Lat:\r\n %.6f\r\n",lastfix.latitude/1e7);
+							display.printf("Lon:\r\n %.6f\r\n",lastfix.longitude/1e7);		
+							display.printf("Altitude:\r\n %.1f m\r\n",lastfix.height/1e3);							
 							break;
 			
 			case 6 ... 7:	display.setTextSize(1);
@@ -104,11 +104,7 @@ void PollDisplay(void)
 			case 8 ... 11:	display.setTextSize(1);
 							display.print("\r\nGPS Alt\r\nCurr\r\n");
 							display.setTextSize(2);
-							display.printf("%.1f\r\n",beaconhMSL/1e3);
-							display.setTextSize(1);
-							display.print("Max\r\n");
-							display.setTextSize(2);
-							display.printf("%.1f\r\n",max_beaconhMSL/1e3);
+							display.printf("%.1f\r\n",lastfix.height/1e3);
 							break;
 							
 			case 12 ... 15:	display.setTextSize(1);
