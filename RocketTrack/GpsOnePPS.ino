@@ -119,8 +119,9 @@ void OnePPS_adjust(void)
 	Serial.print("\t");
 	Serial.print(millis_1pps());
 #endif
-
+#if 0
 	Serial.println("");
+#endif
 }
 
 unsigned long int millis_1pps(void)
