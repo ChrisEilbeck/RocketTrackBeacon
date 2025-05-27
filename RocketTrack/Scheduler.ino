@@ -94,12 +94,12 @@ void PollScheduler(void)
 #if 0
 			if(strcmp(lora_mode,"Long Range")==0)
 			{
-				next_transmit=millis_1pps()+30000;
+				next_transmit=millis_1pps()+lr_period;
 				led_control(0xf0f0f0f0,1);
 			}
 			else
 			{
-				next_transmit=millis_1pps()+1000;
+				next_transmit=millis_1pps()+hr_period;
 				led_control(0xaaaaaaaa,1);
 			}
 #endif			

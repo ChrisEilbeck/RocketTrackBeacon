@@ -74,37 +74,25 @@ void setup()
 	Serial.print("\n--------\tRocketTrack Flight Telemetry System\t--------\r\n\n");
 	
 	SPI.begin(SCK,MISO,MOSI);
-	Wire.begin(SDA,SCL);
+	Wire.begin(SDA,SCL);	
 
 	// mandatory peripherals
 
-//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
-//#endif
+#endif
 	
-	// SD card is optional but if present, modes of operation are configured
-	// from a file rather than just compiled-in defaults.  It will also use
-	// a more elaborate web page too
-	
-	if(SetupSDCard())			{	Serial.println("SD Card Setup failed, disabling ...\r\n");					sdcard_enable=0;		}
+	if(SetupNvMemory())			{	Serial.print("Non-volatile memory read failed\r\n");												}
+	RetrieveSettings();
 
-//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupSPIFFS())			{	Serial.println("SPIFFS Setup failed, disabling ...\r\n");					spiffs_enable=0;		}
-//#else
-//	spiffs_enable=0;
-//#endif
+#else
+	spiffs_enable=0;
+#endif
 		
-	ReadConfigFile();
-
-	if(!sdcard_enable)		logging_enable=0;
-	else					SetupLogging();
-	
 	SetupDisplay();
 	
-#if 0
-	Serial.print("Hanging ...\r\n");
-	while(1);
-#endif	
 #if 0
 #ifdef ARDUINO_ARCH_ESP32
 	if(SetupWiFi())				{	Serial.println("WiFi connection failed, disabling ...");					wifi_enable=0;			}
@@ -115,13 +103,13 @@ void setup()
 #endif
 #endif
 
-	if(SetupAccelerometer())	{	Serial.println("Accelerometer setup failed, disabling ...");				acc_enable=0;			}
-	if(SetupGyro())				{	Serial.println("Gyro setup failed, disabling ...");							gyro_enable=0;			}
+	if(SetupIMU())				{	Serial.print("IMU setup failed, disabling ...\r\n");												}
 	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
 
 	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 	SetupOnePPS();
+
 	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
 #if 0
@@ -148,21 +136,19 @@ int counter=0;
 
 void loop()
 {
-	PollPMIC();
 	PollSerial();
+	PollPMIC();
+
 	PollGPS();
 	PollOnePPS();
+
 	PollLoRa();
-	PollLEDs();
+//	PollLEDs();
 	PollDisplay();
-	PollScheduler();
-	
-#if 0
-	PollAccelerometer();
-	PollGyro();
-#endif
-	
+//	PollIMU();	
 	PollBarometer();
+	
+	PollScheduler();
 }
 
 void PollSerial(void)
@@ -205,7 +191,8 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 		case 'e':	OK=LEDCommandHandler(cmd,cmdptr);				break;
 		case 'o':	OK=LongRangeCommandHandler(cmd,cmdptr);			break;
 		case 'h':	OK=HighRateCommandHandler(cmd,cmdptr);			break;
-		case 'n':	OK=NeopixelCommandHandler(cmd,cmdptr);			break;
+//		case 'n':	OK=NeopixelCommandHandler(cmd,cmdptr);			break;
+		case 'n':	OK=NvMemoryCommandHandler(cmd,cmdptr);			break;
 		case 'z':	OK=BeeperCommandHandler(cmd,cmdptr);			break;
 		
 		case 'x':	OK=1;
@@ -219,7 +206,8 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 					Serial.print("h\t-\tHigh Rate Mode Commands\r\n");
 					Serial.print("o\t-\tLong Range Mode Commands\r\n");
 					Serial.print("e\t-\tLed Commands\r\n");
-					Serial.print("n\t-\tNeopixel Commands\r\n");
+//					Serial.print("n\t-\tNeopixel Commands\r\n");
+					Serial.print("n\t-\tNon-volatile Memory Commands\r\n");
 					Serial.print("b\t-\tBeeper Commands\r\n");
 //					Serial.print("t\t-\tTransmitter Mode\r\n");
 //					Serial.print("r\t-\tReceiver Mode\r\n");

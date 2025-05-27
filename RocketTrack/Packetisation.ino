@@ -54,7 +54,7 @@ void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 			numsats++;
 	
 	// just an id value
-	packet[0]=lastfix.id;
+	packet[0]=lora_id;
 	
 	packet[1]=lastfix.numsats;
 	packet[1]|=(lastfix.gpsfix&0x03)<<6;

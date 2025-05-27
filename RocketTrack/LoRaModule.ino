@@ -6,8 +6,6 @@
 #include "LoRa.h"
 #include "Packetisation.h"
 
-//typedef enum {lmIdle, lmListening, lmSending} tLoRaMode;
-
 bool LoRaTransmitSemaphore=false;
 bool LoRaTXDoneSemaphore=false;
 int LoRaBurstDuration=0;
@@ -16,26 +14,33 @@ uint32_t TXStartTimeMillis;
 int tx_active=0;
 
 // LORA settings
-#define LORA_FREQ			433920000
+#define LORA_FREQ			434150000
 #define LORA_OFFSET			0         // Frequency to add in kHz to make Tx frequency accurate
 
 // HARDWARE DEFINITION
 
 double lora_freq=LORA_FREQ;
+
+int lora_id=0;
+
 double lora_offset=LORA_OFFSET;
 char lora_mode[32]="High Rate";
 
 int lora_crc=0;
 
-int hr_bw=1;
-int hr_sf=2;
-int hr_cr=3;
-int hr_period=4;
+// High Rate mode settings
 
-int lr_bw=5;
-int lr_sf=6;
-int lr_cr=7;
-int lr_period=8;
+int hr_bw=125000;
+int hr_sf=7;
+int hr_cr=8;
+int hr_period=1000;		// not used in RocketTrackReceiver
+
+// Long Range mode settings
+
+int lr_bw=31250;
+int lr_sf=12;
+int lr_cr=8;
+int lr_period=30000;	// not used in RocketTrackReceiver
 
 bool lora_constant_transmit=false;
 
@@ -56,6 +61,9 @@ int SetupLoRa(void)
 	Serial.print("Setting LoRa frequency to ");
 	Serial.print(lora_freq/1e6,3);
 	Serial.println(" MHz");
+
+	Serial.print("LoRa ID set to ");
+	Serial.println(lora_id);
 	
 	if(!LoRa.begin(lora_freq))
 	{
@@ -142,9 +150,9 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					SetLoRaMode(lora_mode);
 					break;
 		
-		case 'i':	lastfix.id=atoi((const char *)&cmd[3]);
+		case 'i':	lora_id=atoi((const char *)&cmd[3]);
 					Serial.print("Setting LoRa beacon id to ");
-					Serial.println(lastfix.id);
+					Serial.println(lora_id);
 					break;
 		
 		case 'l':	Serial.println("Long range mode");

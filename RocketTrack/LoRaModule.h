@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "Global.h"
+
 int SetupLoRa(void);
 
 void PollLoRa(void);
@@ -39,6 +41,9 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr);
 #define LORA_LONG_RANGE_CR	8
 
 extern double lora_freq;
+
+extern int lora_id;
+
 extern char lora_mode[];
 extern int lora_crc;
 

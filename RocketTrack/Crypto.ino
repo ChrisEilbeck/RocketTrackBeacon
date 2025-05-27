@@ -12,7 +12,7 @@ BlockCipher *cipher=&aes256;
 
 uint8_t crypto_key[32];
 
-char crypto_key_hex[65];
+char crypto_key_hex[65]="603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4";
 
 void HexToUint8(char *hex,uint8_t *binary)
 {
