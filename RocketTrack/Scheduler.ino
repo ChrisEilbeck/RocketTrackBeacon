@@ -17,6 +17,7 @@ int button_timer=0;
 
 void PollScheduler(void)
 {
+#if 0
 	bool user_button=digitalRead(USER_BUTTON);
 	
 	if(!user_button&&last_user_button)
@@ -47,6 +48,7 @@ void PollScheduler(void)
 	}
 	
 	last_user_button=user_button;
+#endif
 	
 	if(short_button_press)
 	{
@@ -60,10 +62,10 @@ void PollScheduler(void)
 			// timeslot
 			
 			next_transmit=1000*(1+millis_1pps()/1000);
-			next_transmit+=100*(lastfix.id%10);
+			next_transmit+=100*(lora_id%10);
 			
 			Serial.print("Constant transmit on in timeslot ");
-			Serial.println(lastfix.id%10);
+			Serial.println(lora_id%10);
 		}
 		
 		short_button_press=false;
@@ -89,7 +91,7 @@ void PollScheduler(void)
 			&&	(lora_constant_transmit)	)
 		{
 			next_transmit=1000*(1+millis_1pps()/1000);
-			next_transmit+=100*(lastfix.id%10);
+			next_transmit+=100*(lora_id%10);
 		
 #if 0
 			if(strcmp(lora_mode,"Long Range")==0)

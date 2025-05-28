@@ -1,12 +1,11 @@
 
 #define DEBUGCONFIG 0
   
-#include "Accelerometer.h"
 #include "Barometer.h"
 #include "Crypto.h"
 #include "FlightEvents.h"
 #include "GPS.h"
-#include "Gyro.h"
+#include "IMU.h"
 #include "Logging.h"
 #include "LoRaModule.h"
 #include "Magnetometer.h"
@@ -76,15 +75,15 @@ configvalue_t config[]={
 	{	"Barometer",		"Type",				(void *)baro_type,					CFGSTRING,		"BME280"					},
 	{	"Barometer",		"MeasurementRate",	(void *)&baro_rate,					CFGINTEGER,		"100"						},
 	{	"Barometer",		"GPSSync",			(void *)&baro_gps_sync,				CFGINTEGER,		"1"							},
-	{	"Accelerometer",	"Enable",			(void *)&acc_enable,				CFGINTEGER,		"1"							},
-	{	"Accelerometer",	"Type",				(void *)acc_type,					CFGSTRING,		"MPU6050"					},
-	{	"Accelerometer",	"MeasurementRate",	(void *)&acc_rate,					CFGINTEGER,		"200"						},
-	{	"Gyro",				"Enable",			(void *)&gyro_enable,				CFGINTEGER,		"1"							},
-	{	"Gyro",				"Type",				(void *)gyro_type,					CFGSTRING,		"MPU6050"					},
-	{	"Gyro",				"MeasurementRate",	(void *)&gyro_rate,					CFGINTEGER,		"200"						},
-	{	"Magnetometer",		"Enable",			(void *)&mag_enable,				CFGINTEGER,		"1"							},
-	{	"Magnetometer",		"Type",				(void *)mag_type,					CFGSTRING,		"None"						},
-	{	"Magnetometer",		"MeasurementRate",	(void *)&mag_rate,					CFGINTEGER,		"200"						},
+//	{	"Accelerometer",	"Enable",			(void *)&acc_enable,				CFGINTEGER,		"1"							},
+//	{	"Accelerometer",	"Type",				(void *)acc_type,					CFGSTRING,		"MPU6050"					},
+//	{	"Accelerometer",	"MeasurementRate",	(void *)&acc_rate,					CFGINTEGER,		"200"						},
+//	{	"Gyro",				"Enable",			(void *)&gyro_enable,				CFGINTEGER,		"1"							},
+//	{	"Gyro",				"Type",				(void *)gyro_type,					CFGSTRING,		"MPU6050"					},
+//	{	"Gyro",				"MeasurementRate",	(void *)&gyro_rate,					CFGINTEGER,		"200"						},
+//	{	"Magnetometer",		"Enable",			(void *)&mag_enable,				CFGINTEGER,		"1"							},
+//	{	"Magnetometer",		"Type",				(void *)mag_type,					CFGSTRING,		"None"						},
+//	{	"Magnetometer",		"MeasurementRate",	(void *)&mag_rate,					CFGINTEGER,		"200"						},
 	{	"Logging",			"Level",			(void *)&log_level,					CFGINTEGER,		"1"							},
 	{	"",					"",					0,									0,				""							}
 };

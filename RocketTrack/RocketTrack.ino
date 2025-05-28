@@ -43,12 +43,11 @@ to be done
 
 #include "HardwareAbstraction.h"
 
-#include "Accelerometer.h"
 #include "Barometer.h"
 #include "Beeper.h"
 #include "ConfigFile.h"
 #include "Display.h"
-#include "Gyro.h"
+#include "IMU.h"
 #include "Leds.h"
 #include "Logging.h"
 #include "Neopixels.h"
@@ -78,18 +77,18 @@ void setup()
 
 	// mandatory peripherals
 
-#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
-#endif
+//#endif
 	
 	if(SetupNvMemory())			{	Serial.print("Non-volatile memory read failed\r\n");												}
 	RetrieveSettings();
 
-#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupSPIFFS())			{	Serial.println("SPIFFS Setup failed, disabling ...\r\n");					spiffs_enable=0;		}
-#else
-	spiffs_enable=0;
-#endif
+//#else
+//	spiffs_enable=0;
+//#endif
 		
 	SetupDisplay();
 	
@@ -103,7 +102,9 @@ void setup()
 #endif
 #endif
 
-	if(SetupIMU())				{	Serial.print("IMU setup failed, disabling ...\r\n");												}
+	if(SetupIMU())				{	Serial.print("IMU setup failed, disabling ...\r\n");						imu_enable=false;		}
+	imu_enable=false;
+
 	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
 
 	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
@@ -145,7 +146,7 @@ void loop()
 	PollLoRa();
 //	PollLEDs();
 	PollDisplay();
-//	PollIMU();	
+	PollIMU();	
 	PollBarometer();
 	
 	PollScheduler();
@@ -182,9 +183,9 @@ void ProcessCommand(uint8_t *cmd,uint16_t cmdptr)
 	
 	switch(cmd[0]|0x20)
 	{
-		case 'a':	OK=AccelerometerCommandHandler(cmd,cmdptr);		break;
+//		case 'a':	OK=AccelerometerCommandHandler(cmd,cmdptr);		break;
 		case 'b':	OK=BarometerCommandHandler(cmd,cmdptr);			break;
-		case 'y':	OK=GyroCommandHandler(cmd,cmdptr);				break;
+//		case 'y':	OK=GyroCommandHandler(cmd,cmdptr);				break;
 		case 'g':	OK=GPSCommandHandler(cmd,cmdptr);				break;
 		case 'l':	OK=LORACommandHandler(cmd,cmdptr);				break;
 		case 'p':	OK=PMICCommandHandler(cmd,cmdptr);				break;
