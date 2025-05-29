@@ -42,8 +42,13 @@ void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 	Serial.printf("packedlat = %d\r\n",packedlat);
 	Serial.printf("packedlon = %d\r\n",packedlon);
 #endif
-	
+
+#if USE_GPS_ALTITUDE
 	double hght=(double)lastfix.height/1e3;
+#else
+	double hght=(double)baro_height;
+#endif
+
 	int16_t packed_height=(int16_t)hght;
 	
 	int cnt;
