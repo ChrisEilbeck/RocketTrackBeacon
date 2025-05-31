@@ -1,26 +1,23 @@
 
 /*
 
-to be done
+	to be done
 
--	logging format
+	-	logging format
 
--	wire up and integrate sd card
+	-	wire up and integrate sd card
 
--	wire up sensors
-		done
-		
--	check low power
+	-	check low power
 
--	flight events (based on baro, not gps altitude, using gps location too)
+	-	flight events (based on baro, not gps altitude, using gps location too)
 
--	turning off the gps after landing detection 
-	
--	fsk backup mode if possible
+	-	turning off the gps after landing detection 
 
--	using the OLED display for something useful other than just a logo
+	-	fsk backup mode if possible
 
--	merge in the receiver code from RocketTrackReceiver and have one codebase that can be switched between roles using the config file on the sd card
+	-	using the OLED display for something useful other than just a logo
+
+	-	merge in the receiver code from RocketTrackReceiver and have one codebase that can be switched between roles using the config file on the sd card
 
 
 
