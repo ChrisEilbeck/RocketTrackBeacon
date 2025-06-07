@@ -1,4 +1,6 @@
 
+#include "Adafruit_GPS.h"
+
 #include "GPS.h"
 #include "Packetisation.h"
 
@@ -73,283 +75,25 @@ uint8_t beaconhour;
 uint8_t beaconmin;
 uint8_t beaconsec;
 
-void CalculateChecksum(uint8_t *buffer,uint16_t bufferptr,uint8_t *CK_A,uint8_t *CK_B)
-{
-	uint16_t cnt;
-	
-	*CK_A=0;
-	*CK_B=0;
-	
-	for(cnt=2;cnt<(bufferptr-2);cnt++)
-	{
-		*CK_A+=buffer[cnt];
-		*CK_B+=*CK_A;
-	}
-}
+Adafruit_GPS gps(&Serial1);
 
-void FixUBXChecksum(uint8_t *buffer,uint16_t bufferptr)
-{ 
-	uint16_t cnt;
-	uint8_t CK_A=0;
-	uint8_t CK_B=0;
-	
-	for(cnt=2;cnt<(bufferptr-2);cnt++)
-	{
-		CK_A+=buffer[cnt];
-		CK_B+=CK_A;
-	}
-	
-	buffer[bufferptr-2]=CK_A;
-	buffer[bufferptr-1]=CK_B;
-}
-
-bool CheckChecksum(uint8_t *buffer,uint16_t bufferptr)
-{
-	uint8_t CK_A;
-	uint8_t CK_B;
-	
-	CalculateChecksum(buffer,bufferptr,&CK_A,&CK_B);
-	
-	if((CK_A==buffer[bufferptr-2])&&(CK_B==buffer[bufferptr-1]))	return(1);
-	else															return(0);
-}
-
-void SendUBX(uint8_t *Message,uint16_t bufferptr)
-{
-	uint16_t cnt;
-	
-	LastCommand1=Message[2];
-	LastCommand2=Message[3];
-	
-	for(cnt=0;cnt<bufferptr;cnt++)
-		Serial1.write(Message[cnt]);
-}
-
-void EnableRawMeasurements(void)
-{
-	// send both RAM hacks, doesn't seem to hurt if you do both
-	
-	// for v6.02 ROM
-	uint8_t cmd1[]={	0xb5,0x62,0x09,0x01,0x10,0x00,0xdc,0x0f,0x00,0x00,0x00,0x00,0x00,0x00,0x23,0xcc,0x21,0x00,0x00,0x00,0x02,0x10,0x27,0x0e	};
-	
-	// for v7.03 ROM
-	uint8_t cmd2[]={	0xb5,0x62,0x09,0x01,0x10,0x00,0xc8,0x16,0x00,0x00,0x00,0x00,0x00,0x00,0x97,0x69,0x21,0x00,0x00,0x00,0x02,0x10,0x2b,0x22	};
-	
-	SendUBX(cmd1,sizeof(cmd1));
-	SendUBX(cmd2,sizeof(cmd2));
-	
-#if (DEBUG>0)
-	Serial.println("Enabling raw measurements ...");
-#endif
-}
-
-void DisableNMEAProtocol(unsigned char Protocol)
-{
-	unsigned char Disable[]={	0xB5,0x62,0x06,0x01,0x08,0x00,0xF0,0x00,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00	};
-	
-	Disable[7]=Protocol;
-	
-	FixUBXChecksum(Disable,sizeof(Disable));
-	
-	SendUBX(Disable,sizeof(Disable));
-	
-#if (DEBUG>0)
-	Serial.print("Disable NMEA ");
-	Serial.println(Protocol);
-#endif
-}
-
-void SetMessageRate(uint8_t id1,uint8_t id2,uint8_t rate)
-{
-	unsigned char Disable[]={	0xB5,0x62,0x06,0x01,0x08,0x00,id1,id2,0x00,rate,rate,0x00,0x00,0x01,0x00,0x00	};
-	
-	FixUBXChecksum(Disable,sizeof(Disable));
-	SendUBX(Disable,sizeof(Disable));
-}
-
-void SetFlightMode(byte NewMode)
-{
-	// Send navigation configuration command
-	unsigned char setNav[]={	0xB5,0x62,0x06,0x24,0x24,0x00,0xFF,0xFF,0x06,0x03,0x00,0x00,0x00,0x00,0x10,0x27,0x00,0x00,0x05,0x00,0xFA,0x00,0xFA,0x00,0x64,0x00,0x2C,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x16,0xDC	};
-	
-	setNav[8]=NewMode;
-	
-	FixUBXChecksum(setNav,sizeof(setNav));
-	
-	SendUBX(setNav,sizeof(setNav));
-}
-    
-void ChangeBaudRate(uint32_t BaudRate)
-{
-	char cmd[64];
-	
-	if(BaudRate==115200)	sprintf(cmd,"$PUBX,41,1,0007,0003,115200,0*18\r\n");
-	if(BaudRate==38400)		sprintf(cmd,"$PUBX,41,1,0007,0003,38400,0*20\r\n");
-	if(BaudRate==19200)		sprintf(cmd,"$PUBX,41,1,0007,0003,19200,0*25\r\n");
-	if(BaudRate==9600)		sprintf(cmd,"$PUBX,41,1,0007,0003,9600,0*10\r\n");
-	
-	if(strlen(cmd)>0)
-	{
-		SendUBX((uint8_t *)cmd,strlen(cmd));
-	}
-}
-
-void Set5Hz_Fix_Rate()
-{
-	uint8_t cmd[]={	0xB5,0x62,0x06,0x08,0x06,0x00,0xC8,0x00,0x01,0x00,0x01,0x00,0xDE,0x6A	};
-	
-	FixUBXChecksum(cmd,sizeof(cmd));
-	SendUBX(cmd,sizeof(cmd));
-}
-
-
-#if 1
 int SetupGPS(void)
 {
-	Serial.println("Open GPS port");
-	
-	// this could do with some autobauding
-	
-	
-	Serial1.begin(9600,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
-
-	// this also assumes we're using a u-Blox receiver, not always true
-
-#if BINARY_GPS	
-	#warning "this only support a u-Blox GPS receiver"
-
-#if 1
-	// turn off all NMEA output	
-	SetMessageRate(0xf0,0x00,0x00);	// GPGGA
-	SetMessageRate(0xf0,0x01,0x00);	// GPGLL
-	SetMessageRate(0xf0,0x02,0x00);	// GPGSA
-	SetMessageRate(0xf0,0x03,0x00);	// GPGSV
-	SetMessageRate(0xf0,0x04,0x00);	// GPRMC
-	SetMessageRate(0xf0,0x05,0x00);	// GPVTG
-#endif	
-#if 1
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x05);	// NAV-STATUS every fifth fix
-	SetMessageRate(0x01,0x30,0x05);	// NAV-SVINFO every fifth fix
-	SetMessageRate(0x01,0x21,0x05);	// NAV-TIMEUTC every fifth fix
-	Set5Hz_Fix_Rate();
-#else
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
-#endif
-#endif
-	
-	return(0);
-}
-#else
-int SetupGPS(void)
-{
-#if 0
-	// Switch GPS on,if we have control of that
-	pinMode(GPS_ON,OUTPUT);
-	digitalWrite(GPS_ON,1);
-#endif
-	
 #if (DEBUG>0)
 	Serial.println("Open GPS port");
 #endif
-
-	Serial1.begin(9600,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
-	
-	
-	
-	
-	
-	
-	
-#if 0
-	// the gps will start at 9600 baud.  we need to change it to 115200, switch a load 
-	// of messages off, enable some ubx messages then change the measurement rate to 
-	// every 200ms
-	
-#ifdef ARDUINO_TBeam
-	Serial1.begin(9600,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
-
-  #if 1
-	ChangeBaudRate(115200);
-	
-	Serial1.flush();
-	Serial1.end();
-	
-	Serial1.begin(115200,SERIAL_8N1,34,12);	// Pins for T-Beam v0.8 (3 push buttons) and up
-  #endif	
-#else
-	Serial1.begin(38400);
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
+	Serial.println("\tSetting up GPS port for the T-Beam 3 button with a Neo8 module");
+#endif
+#ifdef ARDUINO_XIAO_ESP32S3
+	Serial.println("\tSetting up GPS port for the Xiao Esp32s3 with an MTK3333 module");
 #endif
 
-	delay(500);
-	
-  #if 0
-	Set5Hz_Fix_Rate();
-  #endif
-
-  #if 0
-	SetMessageRate(0xf0,0x00,0x01);	// GPGGA
-	SetMessageRate(0xf0,0x01,0x01);	// GPGLL
-	SetMessageRate(0xf0,0x02,0x05);	// GPGSA
-	SetMessageRate(0xf0,0x03,0x05);	// GPGSV
-	SetMessageRate(0xf0,0x04,0x01);	// GPRMC
-	SetMessageRate(0xf0,0x05,0x01);	// GPVTG
-  #else	
-	// turn off all NMEA output	
-	SetMessageRate(0xf0,0x00,0x00);	// GPGGA
-	SetMessageRate(0xf0,0x01,0x00);	// GPGLL
-	SetMessageRate(0xf0,0x02,0x00);	// GPGSA
-	SetMessageRate(0xf0,0x03,0x00);	// GPGSV
-	SetMessageRate(0xf0,0x04,0x00);	// GPRMC
-	SetMessageRate(0xf0,0x05,0x00);	// GPVTG
-  #endif	
-	
-  #if 0
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
-  #endif	
-
-	delay(100);
-  #if 1
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
-  #endif	
-
-  #if 0
-	// turn on the useful UBX messages
-	
-	SetMessageRate(0x01,0x02,0x01);	// NAV-POSLLH every fix
-
-    #if 0
-	SetMessageRate(0x01,0x03,0x05);	// NAV-STATUS every 5th fix
-	SetMessageRate(0x01,0x30,0x05);	// NAV-SVINFO every 5th fix
-    #else
-	SetMessageRate(0x01,0x03,0x01);	// NAV-STATUS every fix
-	SetMessageRate(0x01,0x30,0x01);	// NAV-SVINFO every fix
-    #endif
-
-    #if 0
-	EnableRawMeasurements();
-    #endif
-	
-    #if 0
-	SetMessageRate(0x02,0x10,0x05);	// RXM-RAW every 5th fix
-    #else
-	SetMessageRate(0x02,0x10,0x00);	// RXM-RAW off
-    #endif
-  #endif
-	
-#else
-	Serial1.begin(9600,SERIAL_8N1,12,15);	// For version 0.7 (2 push buttons) and down
-#endif
+	Serial1.begin(9600,SERIAL_8N1,UART_TXD,UART_RXD);
+	gps.begin(9600);
 	
 	return(0);
 }
-#endif
 
 void PollGPS(void)
 {
@@ -384,30 +128,7 @@ void PollGPS(void)
 			
 			if(bufferptr<sizeof(buffer))
 			{
-// 				static uint16_t msglength=0;
-				
 				buffer[bufferptr++]=rxbyte;
-				
-// 				if((msglength==0)&&(bufferptr>=6))
-// 				{
-// 					msglength=*((uint16_t *)(buffer+4));
-// 				}
-				
-// 				if(bufferptr==(8+msglength))
-// 				{
-// #if (DEBUG>2)
-// 					int cnt;
-// 					for(cnt=0;cnt<8+msglength;cnt++)
-// 						Serial.printf("%02x ",buffer[cnt]);
-// 					
-// 					Serial.println("");
-// #endif
-// 					
-// 				}
-			}
-			else
-			{
-				// ignore the bytes
 			}
 		}
 		

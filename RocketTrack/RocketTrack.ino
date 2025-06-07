@@ -19,15 +19,6 @@
 
 	-	merge in the receiver code from RocketTrackReceiver and have one codebase that can be switched between roles using the config file on the sd card
 
-
-
-
-
-
-
-
-
-
 */ 
 
 #include <axp20x.h>
@@ -62,59 +53,50 @@ void setup()
 	// Serial port(s)
 	Serial.begin(115200);
 	
-#if 1
-	#warning "wait for a serial connection, for development purposes only"
-	while(!Serial);
-#endif
-	
 	Serial.print("\n--------\tRocketTrack Flight Telemetry System\t--------\r\n\n");
 	
 	SPI.begin(SCK,MISO,MOSI);
 	Wire.begin(SDA,SCL);	
 
+	i2c_bus_scanner();
+
 	// mandatory peripherals
 
-//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
-//#endif
+#endif
 	
 	if(SetupNvMemory())			{	Serial.print("Non-volatile memory read failed\r\n");												}
 	RetrieveSettings();
 
-//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
-	if(SetupSPIFFS())			{	Serial.println("SPIFFS Setup failed, disabling ...\r\n");					spiffs_enable=0;		}
-//#else
-//	spiffs_enable=0;
-//#endif
-		
+#if USE_OLED_DISPLAY		
 	SetupDisplay();
-	
-#if 0
-#ifdef ARDUINO_ARCH_ESP32
-	if(SetupWiFi())				{	Serial.println("WiFi connection failed, disabling ...");					wifi_enable=0;			}
-	if(SetupWebServer())		{	Serial.println("Web Server Setup failed, disabling ...");					webserver_enable=0;		}
-#else
-	wifi_enable=0;
-	webserver_enable=0;
-#endif
 #endif
 
+#if 0
+	#ifdef ARDUINO_ARCH_ESP32
+	if(SetupSPIFFS())			{	Serial.println("SPIFFS Setup failed, disabling ...\r\n");					spiffs_enable=0;		}
+	if(SetupWiFi())				{	Serial.println("WiFi connection failed, disabling ...");					wifi_enable=0;			}
+	if(SetupWebServer())		{	Serial.println("Web Server Setup failed, disabling ...");					webserver_enable=0;		}
+	#else
+	spiffs_enable=0;
+	wifi_enable=0;
+	webserver_enable=0;
+	#endif
+#endif
+
+	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
+	
 	if(SetupIMU())				{	Serial.print("IMU setup failed, disabling ...\r\n");						imu_enable=false;		}
 	imu_enable=false;
 
 	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
 
-	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
-	SetupOnePPS();
+//	SetupOnePPS();
 
 	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
-#if 0
-	Serial.println(crypto_key_hex);
-	DumpHexPacket(crypto_key,32);
-#endif
-	
 	if(SetupScheduler())		{	Serial.println("Scheduler Setup failed, halting ...\r\n");					while(1);				}
 
 	// optional peripherals
@@ -135,16 +117,23 @@ int counter=0;
 void loop()
 {
 	PollSerial();
+
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
 	PollPMIC();
-
-	PollGPS();
-	PollOnePPS();
-
-	PollLoRa();
-//	PollLEDs();
-	PollDisplay();
+#endif
+	
 	PollIMU();	
 	PollBarometer();
+	PollGPS();
+//	PollOnePPS();
+	
+	PollLoRa();
+//	PollLEDs();
+
+#if USE_OLED_DISPLAY		
+	PollDisplay();
+#endif
+
 	
 	PollScheduler();
 }
@@ -227,7 +216,7 @@ void i2c_bus_scanner(void)
 	byte address;
 	int nDevices;
 	
-	Serial.println("Scanning...");
+	Serial.println("Scanning...\n");
 	
 	nDevices=0;
 	for(address=1;address<127;address++) 
@@ -240,7 +229,7 @@ void i2c_bus_scanner(void)
 		
 		if(error==0)
 		{
-			Serial.print("I2C device found at address 0x");
+			Serial.print("\tI2C device found at address 0x");
 			if(address<16) 
 				Serial.print("0");
 			Serial.print(address,HEX);
@@ -272,7 +261,7 @@ void i2c_bus_scanner(void)
 	if(nDevices==0)
 		Serial.println("No I2C devices found\n");
 	else
-		Serial.println("done\n");
+		Serial.println("\nDone ...\n");
 }
 
 bool IRAM_ATTR TinerHandler0(void *timerNo)

@@ -3,7 +3,13 @@
 
 #include <string.h>
 
-#include "LoRa.h"
+#ifdef ARDUINO_XIAO_ESP32S3
+	#include <RH_SX126x.h>
+#else
+	#include "LoRa.h"
+#endif
+
+// this is the custom packet format we're using for RocketTrack
 #include "Packetisation.h"
 
 bool LoRaTransmitSemaphore=false;
@@ -42,6 +48,32 @@ int lr_sf=12;
 int lr_cr=8;
 int lr_period=30000;	// not used in RocketTrackReceiver
 
+#ifdef ARDUINO_XIAO_ESP32S3
+	RH_SX126x::ModemConfig highrate={
+		RH_SX126x::PacketTypeLoRa,
+		RH_SX126x_LORA_SF_128,
+		RH_SX126x_LORA_BW_125_0,
+		RH_SX126x_LORA_CR_4_8,
+		RH_SX126x_LORA_LOW_DATA_RATE_OPTIMIZE_OFF,
+		0,
+		0,
+		0,
+		0
+	};
+	
+	RH_SX126x::ModemConfig longrange={
+		RH_SX126x::PacketTypeLoRa,
+		RH_SX126x_LORA_SF_4096,
+		RH_SX126x_LORA_BW_31_25,
+		RH_SX126x_LORA_CR_4_8,
+		RH_SX126x_LORA_LOW_DATA_RATE_OPTIMIZE_OFF,
+		0,
+		0,
+		0,
+		0
+	};
+#endif
+
 bool lora_constant_transmit=false;
 
 uint8_t TxPacket[MAX_TX_PACKET_LENGTH];
@@ -51,10 +83,17 @@ uint16_t TxPacketCounter=0;
 
 uint32_t LastLoRaTX=0;
 
+#ifdef ARDUINO_XIAO_ESP32S3
+	// NSS, DIO1, BUSY, NRESET
+	RH_SX126x LoRaDriver(LORA_NSS,LORA_DIO0,LORA_BUSY,LORA_RESET);
+#endif
+
 int SetupLoRa(void)
 {
-    LoRa.setPins(LORA_NSS,LORA_RESET,LORA_DIO0);
-	LoRa.onTxDone(onTxDone);
+	Serial.println("SetupLoRa() entry");
+
+	// HACK
+	lora_freq=868.150;
 	
 	if(lora_freq<1e6)	lora_freq*=1e6;
 	
@@ -65,15 +104,32 @@ int SetupLoRa(void)
 	Serial.print("LoRa ID set to ");
 	Serial.println(lora_id);
 	
+#ifdef ARDUINO_XIAO_ESP32S3
+	if(!LoRaDriver.init())
+	{
+		Serial.println("Starting LoRa module failed!");
+		return(1);	
+	}
+
+	// units are in MHz, not in Hz like other libraries
+	LoRaDriver.setFrequency(lora_freq/1e6);
+	
+	// get rid of useless headers
+	LoRaDriver.enableRawMode(true);
+#else
+    LoRa.setPins(LORA_NSS,LORA_RESET,LORA_DIO0);
+	LoRa.onTxDone(onTxDone);
+	
 	if(!LoRa.begin(lora_freq))
 	{
 		Serial.println("Starting LoRa module failed!");
 		return(1);
 	}
-	
+#endif
+		
 	Serial.println("Started LoRa module ok ...");
 	
-	SetLoRaMode(lora_mode);
+//	SetLoRaMode(lora_mode);
 	
 	return(0);
 }
@@ -131,9 +187,12 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					Serial.printf("Setting constant transmit mode to %d\r\n",lora_constant_transmit);
 					break;
 		
+#ifdef ARDUINO_XIAO_ESP32S3
+#else
 		case 'd':	Serial.println("Dumping LoRa registers");
 					LoRa.dumpRegisters(Serial);
 					break;
+#endif
 		
 		case 'g':	Serial.println("Transmitting GPS LoRa packet");
 					PackPacket(TxPacket,&TxPacketLength);
@@ -264,12 +323,11 @@ int HighRateCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 
 void SetLoRaMode(char *mode)
 {
-#if LOW_POWER_TRANSMIT
-	LoRa.setTxPower(5);
+#ifdef ARDUINO_XIAO_ESP32S3
 #else
 	LoRa.setTxPower(17);
 #endif
-	
+		
 	if(strcmp(mode,"Long Range")==0)
 	{
 		Serial.println("Setting LoRa to long range mode");
@@ -278,9 +336,15 @@ void SetLoRaMode(char *mode)
 		LedRepeatCount=0;
 		LedBitCount=0;					
 		
+#ifdef ARDUINO_XIAO_ESP32S3
+		LoRaDriver.setFrequency(lora_freq/1e6,true);
+//		LoRaDriver.setModulationParametersLoRa(lr_sf,lr_bw,lr_cr,false);
+		LoRaDriver.setModemRegisters(&longrange);
+#else
 		LoRa.setSpreadingFactor(lr_sf);
 		LoRa.setSignalBandwidth(lr_bw);
 		LoRa.setCodingRate4(lr_cr);
+#endif
 	}
 	else if(strcmp(mode,"High Rate")==0)
 	{
@@ -290,17 +354,26 @@ void SetLoRaMode(char *mode)
 		LedRepeatCount=0;
 		LedBitCount=0;					
 		
+#ifdef ARDUINO_XIAO_ESP32S3
+		LoRaDriver.setFrequency(lora_freq/1e6,true);
+//		LoRaDriver.setModulationParametersLoRa(hr_sf,hr_bw,hr_cr,false);
+		LoRaDriver.setModemRegisters(&highrate);
+#else
 		LoRa.setSpreadingFactor(hr_sf);
 		LoRa.setSignalBandwidth(hr_bw);
 		LoRa.setCodingRate4(hr_cr);
+#endif
 	}
 	else
 	{	
 		Serial.println("Duff LoRa mode selected!");
 	}
 	
+#ifdef ARDUINO_XIAO_ESP32S3
+#else
 	if(lora_crc)	LoRa.enableCrc();
 	else			LoRa.disableCrc();
+#endif
 }
 
 void PollLoRa(void)
@@ -322,11 +395,19 @@ void PollLoRa(void)
 		SetLoRaMode(lora_mode);		
 #endif		
 
+#ifdef ARDUINO_XIAO_ESP32S3
+		Serial.printf("\tSetting LoRa frequency to %.3f MHz\r\n",lora_freq/1e6);
+		LoRaDriver.setFrequency(lora_freq/1e6,false);
+		
+		Serial.println("Sending packet");
+		LoRaDriver.send(TxPacket,TxPacketLength);
+#else
 		LoRa.setFrequency(lora_freq);
 		
 		LoRa.beginPacket(false);
 		LoRa.write(TxPacket,TxPacketLength);
 		LoRa.endPacket(true);
+#endif
 		
 		LoRaTransmitSemaphore=0;
 	}

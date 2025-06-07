@@ -17,7 +17,7 @@ int button_timer=0;
 
 void PollScheduler(void)
 {
-#if 0
+#if (USER_BUTTON>=0)
 	bool user_button=digitalRead(USER_BUTTON);
 	
 	if(!user_button&&last_user_button)

@@ -24,6 +24,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH,SCREEN_HEIGHT,&Wire,OLED_RESET);
 
 int display_update_suspend=0;
 
+bool display_enable=false;
+
 int SetupDisplay(void)
 {
 	// SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
@@ -32,6 +34,8 @@ int SetupDisplay(void)
 		Serial.println(F("SSD1306 allocation failed"));
 		return(1);
 	}
+	
+	display_enable=true;
 	
 	Serial.println(F("SSD1306 display configured ..."));
 	
@@ -55,6 +59,9 @@ int SetupDisplay(void)
 
 void PollDisplay(void)
 {
+	if(!display_enable)
+		return;
+	
 	static int DisplayState=0;
 	static int LastDisplayChange=0;
 	
@@ -142,6 +149,9 @@ void PollDisplay(void)
 
 void SetTXIndicator(int on)
 {
+	if(!display_enable)
+		return;
+	
 	if(on)
 	{
 		display.setTextSize(2);
@@ -164,6 +174,9 @@ void SetTXIndicator(int on)
 
 void ShowModeChange(void)
 {
+	if(!display_enable)
+		return;
+	
 	display.clearDisplay();
 
 	display.setTextSize(4);
