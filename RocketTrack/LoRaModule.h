@@ -40,7 +40,7 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr);
 #define LORA_LONG_RANGE_SF	12
 #define LORA_LONG_RANGE_CR	8
 
-extern double lora_freq;
+extern float lora_freq;
 
 extern int lora_id;
 

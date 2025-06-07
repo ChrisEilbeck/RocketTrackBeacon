@@ -25,7 +25,7 @@ int tx_active=0;
 
 // HARDWARE DEFINITION
 
-double lora_freq=LORA_FREQ;
+float lora_freq=LORA_FREQ;
 
 int lora_id=0;
 
@@ -93,7 +93,7 @@ int SetupLoRa(void)
 	Serial.println("SetupLoRa() entry");
 
 	// HACK
-	lora_freq=868.150;
+//	lora_freq=868.150;
 	
 	if(lora_freq<1e6)	lora_freq*=1e6;
 	

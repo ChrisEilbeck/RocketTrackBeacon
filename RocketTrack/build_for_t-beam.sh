@@ -1,6 +1,6 @@
 #!/bin/bash
 
-##VERBOSE=--verbose
+VERBOSE=--verbose
 BOARD=esp32:esp32:t-beam:Revision=Radio_SX1276
 
 arduino-cli lib uninstall SD
