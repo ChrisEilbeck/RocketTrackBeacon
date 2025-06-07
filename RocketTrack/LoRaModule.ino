@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 	#include <RH_SX126x.h>
 #else
 	#include "LoRa.h"
@@ -48,7 +48,7 @@ int lr_sf=12;
 int lr_cr=8;
 int lr_period=30000;	// not used in RocketTrackReceiver
 
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 	RH_SX126x::ModemConfig highrate={
 		RH_SX126x::PacketTypeLoRa,
 		RH_SX126x_LORA_SF_128,
@@ -83,7 +83,7 @@ uint16_t TxPacketCounter=0;
 
 uint32_t LastLoRaTX=0;
 
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 	// NSS, DIO1, BUSY, NRESET
 	RH_SX126x LoRaDriver(LORA_NSS,LORA_DIO0,LORA_BUSY,LORA_RESET);
 #endif
@@ -104,7 +104,7 @@ int SetupLoRa(void)
 	Serial.print("LoRa ID set to ");
 	Serial.println(lora_id);
 	
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 	if(!LoRaDriver.init())
 	{
 		Serial.println("Starting LoRa module failed!");

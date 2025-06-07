@@ -88,12 +88,20 @@ int SetupGPS(void)
 #ifdef ARDUINO_XIAO_ESP32S3
 	Serial.println("\tSetting up GPS port for the Xiao Esp32s3 with an MTK3333 module");
 #endif
+#ifdef ARDUINO_HELTEC_WIRELESS_TRACKER
+	pinMode(GNSS_RST,OUTPUT);
+	digitalWrite(GNSS_RST,HIGH);
+#endif
 
-	Serial1.begin(9600,SERIAL_8N1,UART_TXD,UART_RXD);
-	gps.begin(9600);
+	Serial1.begin(GPS_BAUD_RATE,SERIAL_8N1,UART_RXD,UART_TXD);
+
+	gps.begin(GPS_BAUD_RATE);
 	
 	return(0);
 }
+
+uint32_t gpstimer = millis();
+
 
 void PollGPS(void)
 {
@@ -102,13 +110,58 @@ void PollGPS(void)
 	uint8_t rxbyte=0x00;
 	static uint8_t lastbyte=0x00;
 	
-#if GPS_PASSTHROUGH
-	if(Serial1.available())	{	rxbyte=Serial1.read();	Serial.write(rxbyte);	}
-	if(Serial.available())	{	rxbyte=Serial.read();	Serial1.write(rxbyte);	}
-#else
-	while(Serial1.available())
+//	while(Serial1.available())
+	while(gps.available())
 	{
-		rxbyte=Serial1.read();
+//		rxbyte=Serial1.read();
+		rxbyte=gps.read();
+
+ 		if(gps.newNMEAreceived())
+ 		{
+ 			gps.parse(gps.lastNMEA());
+// 			Serial.print(gps.lastNMEA());
+		}
+    
+    
+    		
+  // approximately every 2 seconds or so, print out the current stats
+  if (millis() - gpstimer > 2000) {
+    gpstimer = millis(); // reset the gpstimer
+    Serial.print("\nTime: ");
+    if (gps.hour < 10) { Serial.print('0'); }
+    Serial.print(gps.hour, DEC); Serial.print(':');
+    if (gps.minute < 10) { Serial.print('0'); }
+    Serial.print(gps.minute, DEC); Serial.print(':');
+    if (gps.seconds < 10) { Serial.print('0'); }
+    Serial.print(gps.seconds, DEC); Serial.print('.');
+    if (gps.milliseconds < 10) {
+      Serial.print("00");
+    } else if (gps.milliseconds > 9 && gps.milliseconds < 100) {
+      Serial.print("0");
+    }
+    Serial.println(gps.milliseconds);
+    Serial.print("Date: ");
+    Serial.print(gps.day, DEC); Serial.print('/');
+    Serial.print(gps.month, DEC); Serial.print("/20");
+    Serial.println(gps.year, DEC);
+    Serial.print("Fix: "); Serial.print((int)gps.fix);
+    Serial.print(" quality: "); Serial.println((int)gps.fixquality);
+    if (gps.fix) {
+      Serial.print("Location: ");
+      Serial.print(gps.latitude, 4); Serial.print(gps.lat);
+      Serial.print(", ");
+      Serial.print(gps.longitude, 4); Serial.println(gps.lon);
+      Serial.print("Speed (knots): "); Serial.println(gps.speed);
+      Serial.print("Angle: "); Serial.println(gps.angle);
+      Serial.print("Altitude: "); Serial.println(gps.altitude);
+      Serial.print("Satellites: "); Serial.println((int)gps.satellites);
+      Serial.print("Antenna status: "); Serial.println((int)gps.antenna);
+    }
+  }
+		
+		
+		
+		
 		
 		if(gps_live_mode)
 			Serial.write(rxbyte);
@@ -134,7 +187,6 @@ void PollGPS(void)
 		
 		lastbyte=rxbyte;
 	}
-#endif
 }
 
 void ProcessUBX(uint8_t *buffer,uint16_t bufferptr)

@@ -128,7 +128,8 @@ void loop()
 //	PollOnePPS();
 	
 	PollLoRa();
-//	PollLEDs();
+
+	PollLEDs();
 
 #if USE_OLED_DISPLAY		
 	PollDisplay();

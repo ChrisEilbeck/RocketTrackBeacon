@@ -5,8 +5,8 @@
 
 	#pragma message "Building for TTGO T-Beam"
 
-	#define UART_TXD			34
-	#define UART_RXD			12
+	#define UART_TXD			12
+	#define UART_RXD			34
 
 	#define SCK					5		// GPIO5  -- SX1278's SCK
 	#define MISO				19		// GPIO19 -- SX1278's MISO
@@ -57,8 +57,8 @@
 
 	#warning "building for Xiao Esp32s3 board"
 
-	#define UART_TXD			44
-	#define UART_RXD			43
+	#define UART_TXD			43
+	#define UART_RXD			44
 
 	#define SCK					7
 	#define MISO				8
@@ -86,7 +86,42 @@
 	#define PMIC_IRQ			-1
 	
 	#define USE_OLED_DISPLAY	0
+
+#elif ARDUINO_HELTEC_WIRELESS_TRACKER
+
+	#warning "building for the Heltec Tracker"
+
+	#define UART_TXD			34
+	#define UART_RXD			33
+
+//	#define SCK					9
+//	#define MISO				11
+//	#define MOSI				10
+
+	#define LORA_NSS			SS
+	#define LORA_RESET			12
+	#define LORA_BUSY			12
+	#define LORA_DIO0			14
 	
+	#define SDCARD_NSS			-1
+
+//	#define SDA					42
+//	#define SCL					41
+
+	#define USER_BUTTON			0
+
+	#define LED_PIN				LED_BUILTIN
+	#define LED_OFF				HIGH
+	#define LED_ON				LOW
+
+	#define GPS_BAUD_RATE		115200
+	#define GPS_1PPS			36
+	#define GNSS_RST			35
+
+	#define PMIC_IRQ			-1
+	
+	#define USE_OLED_DISPLAY	1
+
 #else
 	#error "Unsupported board selected!"
 #endif
