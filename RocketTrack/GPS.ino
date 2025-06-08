@@ -26,7 +26,8 @@ byte LastCommand1=0;
 byte LastCommand2=0;
 byte HaveHadALock=0;
 
-bool gps_live_mode=0;
+bool gps_live_mode=false;
+bool gps_summary=false;
 
 // these are all unpacked from UBX messages
 
@@ -120,49 +121,48 @@ void PollGPS(void)
  		{
  			gps.parse(gps.lastNMEA());
 // 			Serial.print(gps.lastNMEA());
+
+			lastfix.latitude=gps.latitudeDegrees;
+			lastfix.longitude=gps.longitudeDegrees;
+			lastfix.numsats=gps.satellites;
+			lastfix.gpsfix=gps.fixquality_3d;
+			
+			
+
+
+
 		}
     
-    
-    		
-  // approximately every 2 seconds or so, print out the current stats
-  if (millis() - gpstimer > 2000) {
-    gpstimer = millis(); // reset the gpstimer
-    Serial.print("\nTime: ");
-    if (gps.hour < 10) { Serial.print('0'); }
-    Serial.print(gps.hour, DEC); Serial.print(':');
-    if (gps.minute < 10) { Serial.print('0'); }
-    Serial.print(gps.minute, DEC); Serial.print(':');
-    if (gps.seconds < 10) { Serial.print('0'); }
-    Serial.print(gps.seconds, DEC); Serial.print('.');
-    if (gps.milliseconds < 10) {
-      Serial.print("00");
-    } else if (gps.milliseconds > 9 && gps.milliseconds < 100) {
-      Serial.print("0");
-    }
-    Serial.println(gps.milliseconds);
-    Serial.print("Date: ");
-    Serial.print(gps.day, DEC); Serial.print('/');
-    Serial.print(gps.month, DEC); Serial.print("/20");
-    Serial.println(gps.year, DEC);
-    Serial.print("Fix: "); Serial.print((int)gps.fix);
-    Serial.print(" quality: "); Serial.println((int)gps.fixquality);
-    if (gps.fix) {
-      Serial.print("Location: ");
-      Serial.print(gps.latitude, 4); Serial.print(gps.lat);
-      Serial.print(", ");
-      Serial.print(gps.longitude, 4); Serial.println(gps.lon);
-      Serial.print("Speed (knots): "); Serial.println(gps.speed);
-      Serial.print("Angle: "); Serial.println(gps.angle);
-      Serial.print("Altitude: "); Serial.println(gps.altitude);
-      Serial.print("Satellites: "); Serial.println((int)gps.satellites);
-      Serial.print("Antenna status: "); Serial.println((int)gps.antenna);
-    }
-  }
-		
-		
-		
-		
-		
+		if(gps_summary)
+		{
+			// approximately every 2 seconds or so, print out the current stats
+			if((millis()-gpstimer)>2000)
+			{
+				// reset the gpstimer
+				gpstimer=millis();
+				
+				Serial.printf("\nTime: %02d:%02d:%02d.%03d\r\n",gps.hour,gps.minute,gps.seconds,gps.milliseconds);
+				Serial.printf("Date: %04d/%02d/%02d\r\n",gps.year,gps.month,gps.day);
+				Serial.print("Fix: "); Serial.print((int)gps.fix);
+				Serial.print(" quality: "); Serial.println((int)gps.fixquality_3d);
+				
+				if(gps.fix)
+				{
+					Serial.printf("Location: %06f%c, %06f%c\r\n",
+						fabs(gps.latitudeDegrees),
+						gps.latitudeDegrees>0.0?'N':'S',
+						fabs(gps.longitudeDegrees),
+						gps.longitudeDegrees>0.0?'E':'W');
+					
+					Serial.print("Speed (knots): "); Serial.println(gps.speed);
+					Serial.print("Bearing: "); Serial.println(gps.angle);
+					Serial.print("Altitude: "); Serial.println(gps.altitude);
+					Serial.print("Satellites: "); Serial.println((int)gps.satellites);
+					Serial.print("Antenna status: "); Serial.println((int)gps.antenna);
+				}
+			}
+		}
+				
 		if(gps_live_mode)
 			Serial.write(rxbyte);
 		
@@ -355,11 +355,16 @@ int GPSCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					gps_live_mode=!gps_live_mode;
 					break;
 		
+		case 'v':	// summary mode toggle
+					gps_summary=!gps_summary;
+					break;
+		
 		case '?':	Serial.print("GPS Test Harness\r\n================\r\n\n");
 					Serial.print("p\t-\tCheck positon\r\n");
 					Serial.print("f\t-\tCheck fix status\r\n");
 					Serial.print("s\t-\tCheck satellite status\r\n");
 					Serial.print("l\t-\tLive GPS data on/off\r\n");
+					Serial.print("v\t-\tDisplay regular GPS data summary\r\n");
 					Serial.print("?\t-\tShow this menu\r\n");
 					break;
 		
