@@ -142,7 +142,7 @@ void PollGPS(void)
 				gpstimer=millis();
 				
 				Serial.printf("\nTime: %02d:%02d:%02d.%03d\r\n",gps.hour,gps.minute,gps.seconds,gps.milliseconds);
-				Serial.printf("Date: %04d/%02d/%02d\r\n",gps.year,gps.month,gps.day);
+				Serial.printf("Date: %04d/%02d/%02d\r\n",2000+gps.year,gps.month,gps.day);
 				Serial.print("Fix: "); Serial.print((int)gps.fix);
 				Serial.print(" quality: "); Serial.println((int)gps.fixquality_3d);
 				
