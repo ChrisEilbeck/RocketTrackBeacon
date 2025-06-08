@@ -122,6 +122,39 @@
 	
 	#define USE_OLED_DISPLAY	1
 
+#elif ARDUINO_TTGO_LoRa32_v21new
+
+	#warning "building for Paxcounter board"
+
+	#define UART_TXD			12
+	#define UART_RXD			34
+
+	#define SCK					5		// GPIO5  -- SX1278's SCK
+	#define MISO				19		// GPIO19 -- SX1278's MISO
+	#define MOSI				27		// GPIO27 -- SX1278's MOSI
+
+	#define LORA_NSS			18
+	#define LORA_RESET			23
+	#define LORA_DIO0			26
+	
+	#define SDCARD_NSS			-1
+
+	#define SDA					21
+	#define SCL					22
+
+	#define USER_BUTTON			38
+
+	#define LED_PIN				LED_BUILTIN
+	#define LED_OFF				HIGH
+	#define LED_ON				LOW
+
+	#define GPS_BAUD_RATE		9600
+	#define GPS_1PPS			37
+
+	#define PMIC_IRQ			-1
+
+	#define USE_OLED_DISPLAY	0
+	
 #else
 	#error "Unsupported board selected!"
 #endif
