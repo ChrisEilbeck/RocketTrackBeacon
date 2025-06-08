@@ -105,8 +105,8 @@
 	
 	#define SDCARD_NSS			-1
 
-//	#define SDA					42
-//	#define SCL					41
+	#define SDA					42
+	#define SCL					41
 
 	#define USER_BUTTON			0
 

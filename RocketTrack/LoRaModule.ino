@@ -187,7 +187,7 @@ int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					Serial.printf("Setting constant transmit mode to %d\r\n",lora_constant_transmit);
 					break;
 		
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 #else
 		case 'd':	Serial.println("Dumping LoRa registers");
 					LoRa.dumpRegisters(Serial);
@@ -323,7 +323,7 @@ int HighRateCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 
 void SetLoRaMode(char *mode)
 {
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 #else
 	LoRa.setTxPower(17);
 #endif
@@ -336,7 +336,7 @@ void SetLoRaMode(char *mode)
 		LedRepeatCount=0;
 		LedBitCount=0;					
 		
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 		LoRaDriver.setFrequency(lora_freq/1e6,true);
 //		LoRaDriver.setModulationParametersLoRa(lr_sf,lr_bw,lr_cr,false);
 		LoRaDriver.setModemRegisters(&longrange);
@@ -354,7 +354,7 @@ void SetLoRaMode(char *mode)
 		LedRepeatCount=0;
 		LedBitCount=0;					
 		
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 		LoRaDriver.setFrequency(lora_freq/1e6,true);
 //		LoRaDriver.setModulationParametersLoRa(hr_sf,hr_bw,hr_cr,false);
 		LoRaDriver.setModemRegisters(&highrate);
@@ -369,7 +369,7 @@ void SetLoRaMode(char *mode)
 		Serial.println("Duff LoRa mode selected!");
 	}
 	
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 #else
 	if(lora_crc)	LoRa.enableCrc();
 	else			LoRa.disableCrc();
@@ -395,7 +395,7 @@ void PollLoRa(void)
 		SetLoRaMode(lora_mode);		
 #endif		
 
-#ifdef ARDUINO_XIAO_ESP32S3
+#if defined(ARDUINO_XIAO_ESP32S3) || defined(ARDUINO_HELTEC_WIRELESS_TRACKER)
 		Serial.printf("\tSetting LoRa frequency to %.3f MHz\r\n",lora_freq/1e6);
 		LoRaDriver.setFrequency(lora_freq/1e6,false);
 		
