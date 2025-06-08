@@ -76,7 +76,15 @@ uint8_t beaconhour;
 uint8_t beaconmin;
 uint8_t beaconsec;
 
-Adafruit_GPS gps(&Serial1);
+#if defined(ARDUINO_TTGO_LoRa32_v21new)
+
+	Adafruit_GPS gps(&Wire);
+
+#else
+
+	Adafruit_GPS gps(&Serial1);
+	
+#endif
 
 int SetupGPS(void)
 {
@@ -92,6 +100,10 @@ int SetupGPS(void)
 #ifdef ARDUINO_HELTEC_WIRELESS_TRACKER
 	pinMode(GNSS_RST,OUTPUT);
 	digitalWrite(GNSS_RST,HIGH);
+	Serial.println("\tSetting up GPS port for the Heltec Tracker with an UC6580 module");
+#endif
+#ifdef ARDUINO_TTGO_LoRa32_v21new
+	Serial.println("\tSetting up GPS port for the Paxcounter with a Stemma I2C MinGps module");
 #endif
 
 	Serial1.begin(GPS_BAUD_RATE,SERIAL_8N1,UART_RXD,UART_TXD);
