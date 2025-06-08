@@ -108,11 +108,20 @@ void PollScheduler(void)
 #if 1
 			Serial.printf("millis_1pps() = %d\r\n",millis_1pps());
 #endif
+#if 1
+			lastfix.gpsfix=gps.fixquality_3d;
+			lastfix.numsats=gps.satellites;
+			lastfix.longitude=gps.longitudeDegrees;
+			lastfix.latitude=gps.latitudeDegrees;
+			lastfix.height=gps.altitude;
+			lastfix.accuracy=gps.HDOP;
+			lastfix.voltage=4200.0;		
 
 			PackPacket(TxPacket,&TxPacketLength);
 			EncryptPacket(TxPacket);
-			LoRaTransmitSemaphore=1;
-			
+#endif
+
+			LoRaTransmitSemaphore=1;			
 		}
 	}
 }

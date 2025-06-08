@@ -122,15 +122,17 @@ void PollGPS(void)
  			gps.parse(gps.lastNMEA());
 // 			Serial.print(gps.lastNMEA());
 
-			lastfix.latitude=gps.latitudeDegrees;
-			lastfix.longitude=gps.longitudeDegrees;
-			lastfix.numsats=gps.satellites;
+#if 0
 			lastfix.gpsfix=gps.fixquality_3d;
+			lastfix.numsats=gps.satellites;
+			lastfix.longitude=gps.longitudeDegrees;
+			lastfix.latitude=gps.latitudeDegrees;
+			lastfix.accuracy=gps.HDOP;
+			lastfix.voltage=4200.0/50;
 			
-			
-
-
-
+			PackPacket(TxPacket,&TxPacketLength);
+			EncryptPacket(TxPacket);
+#endif
 		}
     
 		if(gps_summary)

@@ -61,3 +61,5 @@ extern bool lora_constant_transmit;
 
 extern int tx_active;
 
+extern uint8_t TxPacket[];
+extern uint16_t TxPacketLength;

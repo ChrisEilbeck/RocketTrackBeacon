@@ -25,7 +25,7 @@ void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 	static uint16_t packetcounter=0;
 	uint8_t packet[16];
 
-#if 0	
+#if 0
 	Serial.printf("TX latitude = %.6f\r\n",lastfix.latitude);
 	Serial.printf("TX longitude = %.6f\r\n",lastfix.longitude);
 #endif
@@ -35,19 +35,15 @@ void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 	int32_t packedlat=*(int32_t *)&latitude;
 	int32_t packedlon=*(int32_t *)&longitude;
 #else
-	int32_t packedlat=(int32_t)(131072.0*lastfix.latitude/1e7);
-	int32_t packedlon=(int32_t)(131072.0*lastfix.longitude/1e7);
+	int32_t packedlat=(int32_t)(131072.0*lastfix.latitude);
+	int32_t packedlon=(int32_t)(131072.0*lastfix.longitude);
 #endif
 #if 0	
 	Serial.printf("packedlat = %d\r\n",packedlat);
 	Serial.printf("packedlon = %d\r\n",packedlon);
 #endif
 
-#if USE_GPS_ALTITUDE
-	double hght=(double)lastfix.height/1e3;
-#else
-	double hght=(double)baro_height;
-#endif
+	double hght=(double)lastfix.height;
 
 	int16_t packed_height=(int16_t)hght;
 	
@@ -71,10 +67,10 @@ void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 	packet[11]=(packed_height&0xff00)>>8;
 	
 	// horizontal accuracy estimate from NAV-POSLLH message in units of 0.5m
-	packet[12]=lastfix.accuracy;
+	packet[12]=(uint8_t)lastfix.accuracy*2;
 	
 	// battery voltage divided by 20 so 4250 would read as a 212 count, already scaled in PMIC.ino
-	packet[13]=lastfix.voltage;
+	packet[13]=lastfix.voltage/50;
 	
 	packet[14]=(packetcounter&0x00ff)>>0;
 	packet[15]=(packetcounter&0xff00)>>8;
