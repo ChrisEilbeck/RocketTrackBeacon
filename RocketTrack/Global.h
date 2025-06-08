@@ -1,5 +1,5 @@
 
 #pragma once
 
-#define LORA_BAND	434
+#define LORA_BAND	868
 
