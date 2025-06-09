@@ -93,7 +93,7 @@ void setup()
 	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
 
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
-//	SetupOnePPS();
+	SetupOnePPS();
 
 	if(SetupCrypto())			{	Serial.println("Crypto Setup failed, halting ...\r\n");						while(1);				}
 
@@ -124,7 +124,7 @@ void loop()
 	PollIMU();	
 	PollBarometer();
 	PollGPS();
-//	PollOnePPS();
+	PollOnePPS();
 	
 	PollLoRa();
 
