@@ -58,13 +58,13 @@ void setup()
 	SPI.begin(SCK,MISO,MOSI);
 	Wire.begin(SDA,SCL);	
 
-	i2c_bus_scanner();
+//	i2c_bus_scanner();
 
 	// mandatory peripherals
 
-#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
+//#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
-#endif
+//#endif
 	
 	if(SetupNvMemory())			{	Serial.print("Non-volatile memory read failed\r\n");												}
 	RetrieveSettings();
@@ -128,7 +128,7 @@ void loop()
 	
 	PollLoRa();
 
-//	PollLEDs();
+	PollLEDs();
 
 #if USE_OLED_DISPLAY		
 	PollDisplay();

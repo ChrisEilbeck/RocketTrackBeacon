@@ -1,5 +1,5 @@
 
-#include <axp20x.h>
+//#include <axp20x.h>
 
 uint8_t batvolt=0x00;
 bool livepmicdata=false;
