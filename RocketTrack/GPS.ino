@@ -121,6 +121,22 @@ void SetMessageRate(uint8_t id1,uint8_t id2,uint8_t rate)
     SendUBX(Disable,sizeof(Disable));
 }
 
+void Set5Hz_Fix_Rate()
+{
+    uint8_t cmd[]={ 0xB5,0x62,0x06,0x08,0x06,0x00,0xC8,0x00,0x01,0x00,0x01,0x00,0xDE,0x6A   };
+    
+    FixUBXChecksum(cmd,sizeof(cmd));
+    SendUBX(cmd,sizeof(cmd));
+}
+
+void Set1Hz_Fix_Rate()
+{
+    uint8_t cmd[]={ 0xB5,0x62,0x06,0x08,0x06,0x00,0xe8,0x03,0x01,0x00,0x01,0x00,0xDE,0x6A   };
+    
+    FixUBXChecksum(cmd,sizeof(cmd));
+    SendUBX(cmd,sizeof(cmd));
+}
+
 int SetupGPS(void)
 {
 #if (DEBUG>0)
@@ -149,6 +165,8 @@ int SetupGPS(void)
 	// disable all the ubx messages, only output nmea like the other
 	// receivers we're using
 
+	Set1Hz_Fix_Rate();
+
     // turn on NMEA output apart from VTG
     SetMessageRate(0xf0,0x00,0x01); // GPGGA
     SetMessageRate(0xf0,0x01,0x01); // GPGLL
@@ -167,8 +185,7 @@ int SetupGPS(void)
 	return(0);
 }
 
-uint32_t gpstimer = millis();
-
+uint32_t gpstimer=millis();
 
 void PollGPS(void)
 {
@@ -184,6 +201,20 @@ void PollGPS(void)
  		if(gps.newNMEAreceived())
  		{
  			gps.parse(gps.lastNMEA());
+ 			
+#if (GPS_1PPS==-1)
+			if(strncmp(gps.lastNMEA(),"$GPRMC",6)==0)
+			{
+				ticktime_micros=micros();
+				ticktime_millis=millis();
+	 			ticksemaphore=1;
+
+#if 0
+				Serial.print("Sync!\t\t");
+	 			Serial.print(gps.lastNMEA());
+#endif							
+			}
+#endif		
 #if 0
  			Serial.print(gps.lastNMEA());
 #endif

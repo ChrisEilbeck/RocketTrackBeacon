@@ -14,8 +14,10 @@ long int micros_offset=0;
 
 void SetupOnePPS(void)
 {
+#if(GPS_1PPS>-1)
 	pinMode(GPS_1PPS,INPUT_PULLDOWN);
 	attachInterrupt(GPS_1PPS,OnePPSInterrupt,RISING);
+#endif
 }
 
 void OnePPSInterrupt(void)
@@ -117,6 +119,8 @@ void OnePPS_adjust(void)
 #if 0
 	Serial.print(micros_1pps());
 	Serial.print("\t");
+#endif
+#if 0
 	Serial.print(millis_1pps());
 #endif
 #if 0

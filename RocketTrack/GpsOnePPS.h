@@ -2,6 +2,8 @@
 #pragma once
 
 extern int ticksemaphore;
+extern unsigned long int ticktime_micros;
+extern unsigned long int ticktime_millis;
 
 void SetupOnePPS(void);
 void OnePPS_adjust(void);
