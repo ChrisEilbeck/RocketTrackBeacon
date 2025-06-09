@@ -62,7 +62,7 @@ void setup()
 
 	// mandatory peripherals
 
-#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
 #endif
 	
@@ -107,9 +107,6 @@ void setup()
 	if(SetupBeeper())			{	Serial.println("Beeper Setup failed, disabling ...\r\n");					beeper_enable=0;		}
 	if(SetupNeopixels())		{	Serial.println("Neopixels Setup failed, disabling ...\r\n");				neopixels_enable=0;		}
 #endif
-#if 0
-	if(SetupTimers())			{	Serial.println("Timer Setup failed, falling back to software timing ...");	timer_enable=0;			}
-#endif
 
 	Serial.println("Device setup complete!");
 }
@@ -120,7 +117,7 @@ void loop()
 {
 	PollSerial();
 
-#ifdef ARDUINO_TBEAM_USE_RADIO_SX1262
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
 	PollPMIC();
 #endif
 	
@@ -264,10 +261,5 @@ void i2c_bus_scanner(void)
 		Serial.println("No I2C devices found\n");
 	else
 		Serial.println("\nDone ...\n");
-}
-
-bool IRAM_ATTR TinerHandler0(void *timerNo)
-{
-	return(true);
 }
 

@@ -32,6 +32,8 @@
 	
 #elif BOARD_FEATHER
 
+	#warning "building for Adafruit Feather M0"
+
 	#define LED_PIN				13
 	#define LED_ON				HIGH
 	#define LED_OFF				!LED_ON
