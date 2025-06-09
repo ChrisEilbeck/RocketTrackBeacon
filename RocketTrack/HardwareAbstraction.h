@@ -25,6 +25,7 @@
 
 	#define GPS_BAUD_RATE		9600
 	#define GPS_1PPS			37
+//	#define GPS_1PPS			-1
 
 	#define PMIC_IRQ			35
 
