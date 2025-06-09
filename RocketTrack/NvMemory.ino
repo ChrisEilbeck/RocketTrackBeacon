@@ -185,15 +185,14 @@ int RetrieveSettings(void)
 	hr_bw=hrbw;	hr_sf=hrsf;	hr_cr=hrcr;
 	lr_bw=lrbw;	lr_sf=lrsf;	lr_cr=lrcr;
 
+#if 0
 	Serial.println(hr_bw);
 	Serial.println(hr_sf);
 	Serial.println(hr_cr);
 	Serial.println(lr_bw);
 	Serial.println(lr_sf);
 	Serial.println(lr_cr);
-
-
-
+#endif
 	
 	Serial.print("Settings retrieved from NvMemory\r\n");
 
