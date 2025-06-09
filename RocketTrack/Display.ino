@@ -188,9 +188,9 @@ void PollDisplay(void)
 		
 		display.setTextSize(3);
 		display.setCursor(0,104);
-		if(gpsFix==3)		display.println("3D");
-		else if(gpsFix==2)	display.println("2D");
-		else				display.println("NF");
+		if(lastfix.gpsfix==3)		display.println("3D");
+		else if(lastfix.gpsfix==2)	display.println("2D");
+		else						display.println("NF");
 			
 		display.display();
 
