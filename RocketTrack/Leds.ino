@@ -1,4 +1,6 @@
 
+#include <axp20x.h>
+
 bool leds_enable=true;
 uint32_t NextLEDs=0;
 
@@ -16,9 +18,7 @@ int SetupLEDs(void)
 	digitalWrite(LED_PIN,LED_OFF);
 #endif
 	
-	LedPattern=0xffffffff;
-	LedRepeatCount=2;
-	LedBitCount=0;					
+	led_control(0xffffffff,2);
 
 	return(0);
 }
@@ -35,8 +35,7 @@ void PollLEDs(void)
 #else
 			if(LedPattern&0x8000000)	digitalWrite(LED_PIN,LED_ON);
 			else						digitalWrite(LED_PIN,LED_OFF);
-#endif
-						
+#endif						
 			if(LedRepeatCount>0)
 			{
 				LedPattern=(LedPattern<<1)|(LedPattern>>31);
@@ -53,7 +52,7 @@ void PollLEDs(void)
 				LedBitCount=0;
 			}
 			
-			// run the leds on a Hz cycle
+			// run the leds on a 5Hz cycle
 			NextLEDs=millis()+200L;
 		}
 	}
@@ -73,19 +72,13 @@ int LEDCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	switch(cmd[1]|0x20)
 	{
 		case 't':	Serial.print("Triggering LED Test pattern\r\n");
-					LedPattern=0b11101110111000111010111;
-					LedRepeatCount=3;
-					LedBitCount=0;
+					led_control(0b11101110111000111010111,3);
 					break;
 		
-		case '0':	LedPattern=0x00000000;
-					LedRepeatCount=0xffff;
-					LedBitCount=0;
+		case '0':	led_control(0x00000000,0xffff);
 					break;
 					
-		case '1':	LedPattern=0xffffffff;
-					LedRepeatCount=0xffff;
-					LedBitCount=0;
+		case '1':	led_control(0xffffffff,0xffff);
 					break;
 					
 		default:	// ignore

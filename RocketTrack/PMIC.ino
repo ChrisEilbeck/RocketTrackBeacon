@@ -1,3 +1,6 @@
+
+#include <axp20x.h>
+
 uint8_t batvolt=0x00;
 bool livepmicdata=false;
 bool PMIC_semaphore=false;

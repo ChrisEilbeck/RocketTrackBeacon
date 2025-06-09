@@ -110,6 +110,8 @@ void setup()
 #if 0
 	if(SetupTimers())			{	Serial.println("Timer Setup failed, falling back to software timing ...");	timer_enable=0;			}
 #endif
+
+	Serial.println("Device setup complete!");
 }
 
 int counter=0;
@@ -129,13 +131,12 @@ void loop()
 	
 	PollLoRa();
 
-	PollLEDs();
+//	PollLEDs();
 
 #if USE_OLED_DISPLAY		
 	PollDisplay();
 #endif
 
-	
 	PollScheduler();
 }
 

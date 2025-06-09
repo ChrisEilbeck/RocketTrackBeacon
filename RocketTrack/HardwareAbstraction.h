@@ -50,9 +50,6 @@
 	
 	#define USE_OLED_DISPLAY	0
 
-#elif BOARD_TTGO_OLED
-
-
 #elif ARDUINO_XIAO_ESP32S3
 
 	#warning "building for Xiao Esp32s3 board"

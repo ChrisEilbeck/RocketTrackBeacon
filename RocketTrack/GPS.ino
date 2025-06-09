@@ -86,6 +86,41 @@ uint8_t beaconsec;
 	
 #endif
 
+void FixUBXChecksum(uint8_t *buffer,uint16_t bufferptr)
+{ 
+    uint16_t cnt;
+    uint8_t CK_A=0;
+    uint8_t CK_B=0;
+
+    for(cnt=2;cnt<(bufferptr-2);cnt++)
+    {
+        CK_A+=buffer[cnt];
+        CK_B+=CK_A;
+    }
+
+    buffer[bufferptr-2]=CK_A;
+    buffer[bufferptr-1]=CK_B;
+}
+
+void SendUBX(uint8_t *Message,uint16_t bufferptr)
+{
+    uint16_t cnt;
+
+    LastCommand1=Message[2];
+    LastCommand2=Message[3];
+
+    for(cnt=0;cnt<bufferptr;cnt++)
+        Serial1.write(Message[cnt]);
+}
+
+void SetMessageRate(uint8_t id1,uint8_t id2,uint8_t rate)
+{
+    unsigned char Disable[]={   0xB5,0x62,0x06,0x01,0x08,0x00,id1,id2,0x00,rate,rate,0x00,0x00,0x01,0x00,0x00   };
+
+    FixUBXChecksum(Disable,sizeof(Disable));
+    SendUBX(Disable,sizeof(Disable));
+}
+
 int SetupGPS(void)
 {
 #if (DEBUG>0)
@@ -110,6 +145,25 @@ int SetupGPS(void)
 
 	gps.begin(GPS_BAUD_RATE);
 	
+#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
+	// disable all the ubx messages, only output nmea like the other
+	// receivers we're using
+
+    // turn on NMEA output apart from VTG
+    SetMessageRate(0xf0,0x00,0x01); // GPGGA
+    SetMessageRate(0xf0,0x01,0x01); // GPGLL
+    SetMessageRate(0xf0,0x02,0x01); // GPGSA
+    SetMessageRate(0xf0,0x03,0x01); // GPGSV
+    SetMessageRate(0xf0,0x04,0x01); // GPRMC
+    SetMessageRate(0xf0,0x05,0x00); // GPVTG
+
+    // turn off UBX messages
+    SetMessageRate(0x01,0x02,0x00); // NAV-POSLLH every fix
+    SetMessageRate(0x01,0x03,0x00); // NAV-STATUS every fifth fix
+    SetMessageRate(0x01,0x30,0x00); // NAV-SVINFO every fifth fix
+    SetMessageRate(0x01,0x21,0x00); // NAV-TIMEUTC every fifth fix
+#endif
+
 	return(0);
 }
 
@@ -123,27 +177,15 @@ void PollGPS(void)
 	uint8_t rxbyte=0x00;
 	static uint8_t lastbyte=0x00;
 	
-//	while(Serial1.available())
 	while(gps.available())
 	{
-//		rxbyte=Serial1.read();
 		rxbyte=gps.read();
 
  		if(gps.newNMEAreceived())
  		{
  			gps.parse(gps.lastNMEA());
-// 			Serial.print(gps.lastNMEA());
-
 #if 0
-			lastfix.gpsfix=gps.fixquality_3d;
-			lastfix.numsats=gps.satellites;
-			lastfix.longitude=gps.longitudeDegrees;
-			lastfix.latitude=gps.latitudeDegrees;
-			lastfix.accuracy=gps.HDOP;
-			lastfix.voltage=4200.0/50;
-			
-			PackPacket(TxPacket,&TxPacketLength);
-			EncryptPacket(TxPacket);
+ 			Serial.print(gps.lastNMEA());
 #endif
 		}
     
