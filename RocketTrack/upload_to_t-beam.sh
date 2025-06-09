@@ -8,6 +8,8 @@ PORT=/dev/ttyACM0
 
 arduino-cli upload ${VERBOSE} --fqbn ${BOARD} --port ${PORT}
 
+exit
+
 rm data/*~ 2>/dev/null
 
 mkspiffs -c data -b 4096 -p 256 -s 0x160000 rockettrack.spiffs.bin

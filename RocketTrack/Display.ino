@@ -84,10 +84,17 @@ int SetupDisplay(void)
 	display.setTextColor(SSD1306_WHITE);	// Draw white text
 	display.cp437(true);					// Use full 256 char 'Code Page 437' font
 	
-	display.setCursor(32,16);
+	display.setCursor(32,0);
 	display.write("Rocket");
-	display.setCursor(40,32);
+	display.setCursor(40,16);
 	display.write("Track");
+	
+	
+	char buffer[32];
+	sprintf(buffer,"ID:  %03d",lora_id);
+
+	display.setCursor(24,40);
+	display.write(buffer);
 	
 	display.display();	
 #endif
@@ -150,13 +157,15 @@ void PollDisplay(void)
 							display.println(beaconnumSats);
 							break;
 
+#if 0
 			case 8 ... 11:	display.setTextSize(1);
 							display.print("\r\nGPS Alt\r\nCurr\r\n");
 							display.setTextSize(2);
 							display.printf("%.1f\r\n",lastfix.height/1e3);
 							break;
-							
-			case 12 ... 15:	display.setTextSize(1);
+#endif
+						
+			case 8 ... 11:	display.setTextSize(1);
 							display.print("\r\nBaro Alt\r\nCurr\r\n");
 							display.setTextSize(2);
 							display.printf("%.1f\r\n",baro_height);
@@ -164,6 +173,12 @@ void PollDisplay(void)
 							display.print("Max\r\n");
 							display.setTextSize(2);
 							display.printf("%.1f\r\n",max_baro_height);
+							break;
+			
+			case 12 ... 16:	display.setTextSize(2);
+							display.print("\r\nLoRa\r\n  ID:\r\n\n");
+//							display.setTextSize(3);
+							display.printf("  %03d",lora_id);
 							break;
 		
 			default:		
