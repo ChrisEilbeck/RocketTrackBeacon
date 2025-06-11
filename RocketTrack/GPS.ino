@@ -201,19 +201,27 @@ void PollGPS(void)
  		{
  			gps.parse(gps.lastNMEA());
  			
-#if (GPS_1PPS==-1)
 			if(strncmp(gps.lastNMEA(),"$GPRMC",6)==0)
 			{
+					beaconyear=gps.year+2000;
+					beaconmonth=gps.month;
+					beaconday=gps.day;
+					beaconhour=gps.hour;
+					beaconmin=gps.minute;
+					beaconsec=gps.seconds;
+			
+			
+#if (GPS_1PPS==-1)
 				ticktime_micros=micros();
 				ticktime_millis=millis();
 	 			ticksemaphore=1;
-
-#if 0
+	 			
+	#if 0
 				Serial.print("Sync!\t\t");
 	 			Serial.print(gps.lastNMEA());
-#endif							
-			}
+	#endif							
 #endif		
+			}
 #if 0
  			Serial.print(gps.lastNMEA());
 #endif
