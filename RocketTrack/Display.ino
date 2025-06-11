@@ -146,15 +146,15 @@ void PollDisplay(void)
 		{
 			case 0 ... 5:	display.setTextSize(1);
 							display.println();
-							display.printf("Lat:\r\n %.6f\r\n",lastfix.latitude/1e7);
-							display.printf("Lon:\r\n %.6f\r\n",lastfix.longitude/1e7);		
-							display.printf("Altitude:\r\n %.1f m\r\n",lastfix.height/1e3);							
+							display.printf("Lat:\r\n %.6f\r\n",lastfix.latitude);
+							display.printf("Lon:\r\n %.6f\r\n",lastfix.longitude);
+//							display.printf("Altitude:\r\n %.1f m\r\n",lastfix.height);
 							break;
 			
 			case 6 ... 7:	display.setTextSize(1);
 							display.print("\r\n# Sats:\r\n  ");
 							display.setTextSize(2);
-							display.println(beaconnumSats);
+							display.println(lastfix.numsats);
 							break;
 
 #if 0
@@ -168,7 +168,7 @@ void PollDisplay(void)
 			case 8 ... 11:	display.setTextSize(1);
 							display.print("\r\nBaro Alt\r\nCurr\r\n");
 							display.setTextSize(2);
-							display.printf("%.1f\r\n",baro_height);
+							display.printf("%.1f\r\n",lastfix.height);
 							display.setTextSize(1);
 							display.print("Max\r\n");
 							display.setTextSize(2);

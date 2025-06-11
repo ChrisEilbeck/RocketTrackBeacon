@@ -157,9 +157,8 @@ int SetupGPS(void)
 	Serial.println("\tSetting up GPS port for the Paxcounter with a Stemma I2C MinGps module");
 #endif
 
-	Serial1.begin(GPS_BAUD_RATE,SERIAL_8N1,UART_RXD,UART_TXD);
-
 	gps.begin(GPS_BAUD_RATE);
+	Serial1.begin(GPS_BAUD_RATE,SERIAL_8N1,UART_RXD,UART_TXD);
 	
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
 	// disable all the ubx messages, only output nmea like the other
