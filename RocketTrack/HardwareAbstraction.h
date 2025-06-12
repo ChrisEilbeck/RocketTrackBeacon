@@ -154,6 +154,41 @@
 	#define PMIC_IRQ			-1
 
 	#define USE_OLED_DISPLAY	0
+
+#if ARDUINO_RASPBERRY_PI_PICO
+
+	#define UART_TXD			6
+	#define UART_RXD			7
+
+	#define SCK					14
+	#define MISO				24
+	#define MOSI				15
+
+	#define LORA_NSS			13
+	#define LORA_RESET			23
+	#define LORA_BUSY			18
+	#define LORA_DIO0			16
+	
+	#define SDCARD_NSS			-1
+
+	#define SDA					4
+	#define SCL					5
+
+	#define USER_BUTTON			-1
+
+	#define LED_PIN				25
+	#define LED_OFF				HIGH
+	#define LED_ON				LOW
+
+	#define GPS_BAUD_RATE		115200
+	#define GPS_1PPS			-1
+
+	#define PMIC_IRQ			-1
+	
+	#define USE_OLED_DISPLAY	0
+
+
+
 	
 #else
 	#error "Unsupported board selected!"
