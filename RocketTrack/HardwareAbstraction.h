@@ -166,7 +166,7 @@
 	#define MISO				24
 	#define LORA_RESET			23
 	#define LORA_BUSY			18
-	#define LORA_DIO0			16
+	#define LORA_DIO1			16
 	#define LORA_DIO4			17
 	
 	#define SDCARD_NSS			-1

@@ -23,6 +23,8 @@
 	#include "LoRa.h"
 #endif
 
+#include "HardwareAbstraction.h"
+
 // this is the custom packet format we're using for RocketTrack
 #include "Packetisation.h"
 
@@ -101,7 +103,7 @@ uint32_t LastLoRaTX=0;
 
 #if USE_RADIOHEAD
 	// NSS, DIO1, BUSY, NRESET
-	RH_SX126x LoRaDriver(LORA_NSS,LORA_DIO0,LORA_BUSY,LORA_RESET);
+	RH_SX126x LoRaDriver(LORA_NSS,LORA_DIO1,LORA_BUSY,LORA_RESET,*SPI1,&highrate);
 #endif
 
 int SetupLoRa(void)
