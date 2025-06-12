@@ -102,7 +102,7 @@ void setup()
 //	if(SetupIMU())				{	Serial.print("IMU setup failed, disabling ...\r\n");						imu_enable=false;		}
 	imu_enable=false;
 
-//	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
+	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
 
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 	SetupOnePPS();
@@ -133,8 +133,8 @@ void loop()
 	PollPMIC();
 #endif
 	
-//	PollIMU();	
-//	PollBarometer();
+	PollIMU();	
+	PollBarometer();
 //	PollGPS();
 //	PollOnePPS();
 	

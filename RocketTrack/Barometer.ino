@@ -49,7 +49,7 @@ int SetupBarometer(void)
 		fail=false;
 	}	
 	
-	if(fail&&!bmp.begin(BMP_ADDRESS))
+	if(fail&&bmp.begin(BMP_ADDRESS))
 	{
 		Serial.println("BMP280 barometer found");
 		baro_sensor_type=BMP280;

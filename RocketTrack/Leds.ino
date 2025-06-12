@@ -19,8 +19,8 @@ int SetupLEDs(void)
 	digitalWrite(LED_PIN,LED_OFF);
 #endif
 	
-	// start with LEDs off
-	led_control(0,0);
+	// flash the leds for a bit
+	led_control(0xaaaaaaaa,0);
 
 	return(0);
 }
