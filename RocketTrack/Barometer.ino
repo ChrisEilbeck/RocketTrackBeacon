@@ -76,23 +76,23 @@ int SetupBarometer(void)
 
 void PollBarometer(void)
 {
-	if(baro_enable)
+	if(!baro_enable)
+		return;
+
+	if(baro_gps_sync)
 	{
-		if(baro_gps_sync)
+		if(baro_trigger)
 		{
-			if(baro_trigger)
-			{
-				SampleBarometer();
-				baro_trigger=false;
-			}
+			SampleBarometer();
+			baro_trigger=false;
 		}
-		else
+	}
+	else
+	{
+		if(millis_1pps()>(last_baro_time+baro_period))
 		{
-			if(millis_1pps()>(last_baro_time+baro_period))
-			{
-				SampleBarometer();
-				last_baro_time=millis_1pps();
-			}
+			SampleBarometer();
+			last_baro_time=millis_1pps();
 		}
 	}
 }

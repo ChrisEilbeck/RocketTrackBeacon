@@ -1,4 +1,6 @@
 
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
+
 //#include "FS.h"
 #include "SPIFFS.h"
 
@@ -225,5 +227,7 @@ int SetupSPIFFS(void)
     
 	return(0);
 }
+#endif
+
 #endif
 

@@ -483,7 +483,7 @@ int IMUCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	return(retval);
 }
 
-void CalibrateAccelerometer(char *direction,float *output,char axis)
+void CalibrateAccelerometer(const char *direction,float *output,char axis)
 {
 	xyzFloat accel;
 	xyzFloat gyro;
@@ -521,7 +521,7 @@ void CalibrateAccelerometer(char *direction,float *output,char axis)
 void ComputeAccelOffsetAndScale(void)
 {
 	Serial.print("X:\tmax = ");	Serial.print(accelmax.x);	Serial.print("\tmin = ");	Serial.println(accelmin.x);
-	Serial.print("Y:\tmax = ");	Serial.print(accelmax.y);	Serial.print("\min = t");	Serial.println(accelmin.y);
+	Serial.print("Y:\tmax = ");	Serial.print(accelmax.y);	Serial.print("\tmin = t");	Serial.println(accelmin.y);
 	Serial.print("Z:\tmax = ");	Serial.print(accelmax.z);	Serial.print("\tmin = ");	Serial.println(accelmin.z);
 
 	AccelOffset.x=accelmax.x+accelmin.x;

@@ -17,6 +17,7 @@ void PMIC_Interrupt(void)
 
 int SetupPMIC(void)
 {
+#if defined(ARDUINO_TBEAM_USE_RADIO_SX1276)
 	Serial.print("AXP192 Init");
 	if(!axp.begin(Wire, AXP192_SLAVE_ADDRESS))	{	Serial.println(" PASS\r\n");	} 
 	else                                        {	Serial.println(" FAIL\r\n");	}
@@ -47,6 +48,7 @@ int SetupPMIC(void)
 
     //! enable all irq channel
     axp.enableIRQ(AXP202_ALL_IRQ, true);
+#endif
 	
 	return(0);
 }
@@ -54,7 +56,8 @@ int SetupPMIC(void)
 void PollPMIC(void)
 {
 	static uint32_t updateat=0;
-	
+
+#if defined(ARDUINO_TBEAM_USE_RADIO_SX1276)	
 	if(PMIC_semaphore)
 	{
         axp.readIRQ();
@@ -66,9 +69,11 @@ void PollPMIC(void)
 	    axp.clearIRQ();
         PMIC_semaphore=false;
 	}
+#endif
 
 	if(millis()>updateat)
 	{
+#if defined(ARDUINO_TBEAM_USE_RADIO_SX1276)
 		lastfix.voltage=axp.getBattVoltage();
 		float batterycurrent=axp.getBattChargeCurrent();
 		
@@ -78,6 +83,7 @@ void PollPMIC(void)
 			if(axp.isChargeing())	{	Serial.printf(", charging at %.1f mA ...\r\n",batterycurrent);	}
 			else					{	Serial.print("\r\n");												}
 		}
+#endif
 		
 		updateat=millis()+1000L;
 	}
@@ -93,9 +99,12 @@ int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 #endif
 	
 	int retval=1;
+
+#if defined(ARDUINO_TBEAM_USE_RADIO_SX1276)
 	float batteryvoltage=axp.getBattVoltage();
 	float batterychargecurrent=axp.getBattChargeCurrent();
-	
+#endif
+
 	switch(cmd[1]|0x20)
 	{
 		case 'l':	livepmicdata=!livepmicdata;
@@ -103,6 +112,7 @@ int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 					else				Serial.print("Live PMIC data disabled\r\n");
 					break;
 					
+#if defined(ARDUINO_TBEAM_USE_RADIO_SX1276)
 		case 'c':	if(axp.isChargeing())	Serial.print("PMIC is charging\r\n");
 					else					Serial.print("PMIC is not charging\r\n");
 					break;
@@ -112,11 +122,16 @@ int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 		
 		case 'i':	Serial.printf("Battery charge current = %.1f mA\r\n",batterychargecurrent);
 					break;
+#endif
 		
 		case '?':	Serial.print("PMIC Test Harness\r\n=================\r\n\n");
 					Serial.print("l\t-\tLive PMIC data on/off\r\n");
+
+#if defined(ARDUINO_TBEAM_USE_RADIO_SX1276)
 					Serial.print("c\t-\tCheck charging status\r\n");
 					Serial.print("v\t-\tCheck battery voltage\r\n");
+#endif
+
 					Serial.print("?\t-\tShow this menu\r\n");
 					break;
 		
@@ -130,7 +145,8 @@ int PMICCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 void ControlLED(axp_chgled_mode_t Mode)
 {
 //	Serial.print("ControlLED() entry\r\n");
-	
+
+#if defined(ARDUINO_TBEAM_USE_RADIO_SX1276)	
 	static axp_chgled_mode_t OldMode=AXP20X_LED_OFF;
 
 	if(Mode!=OldMode)
@@ -138,6 +154,7 @@ void ControlLED(axp_chgled_mode_t Mode)
 		axp.setChgLEDMode(Mode);
 		OldMode=Mode;
 	}
+#endif
 	
 //	Serial.print("ControlLED() exit\r\n");
 }

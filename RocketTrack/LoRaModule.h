@@ -9,6 +9,8 @@ void PollLoRa(void);
 
 int LORACommandHandler(uint8_t *cmd,uint16_t cmdptr);
 
+extern bool lora_enable;
+
 #define LORA_LONG_RANGE_MODE	0
 #define LORA_HIGH_RATE_MODE		1
 

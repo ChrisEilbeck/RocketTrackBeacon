@@ -5,7 +5,12 @@
 
 int SetupNvMemory(void)
 {
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
 	EEPROM.begin(EEPROM_SIZE);
+#else
+
+#endif
+
 	return(0);
 }
 
@@ -73,6 +78,7 @@ int NvMemoryCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 
 void StoreSettings(void)
 {	
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
 	int64_t addr=NVMEMORY_ARRAY;
 	
 	EEPROM.writeFloat(addr,AccelOffset.x);		addr+=sizeof(float);
@@ -114,12 +120,16 @@ void StoreSettings(void)
 	EEPROM.writeInt(addr,lora_id);				addr+=sizeof(int);
 	
 	EEPROM.commit();
+#else
 	
+#endif
+
 	Serial.print("Settings stored to NvMemory\r\n");
 }
 
 int RetrieveSettings(void)
 {
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
 	int64_t addr=NVMEMORY_ARRAY;
 	
 	float accoffx=EEPROM.readFloat(addr);		addr+=sizeof(float);
@@ -194,6 +204,12 @@ int RetrieveSettings(void)
 	Serial.println(lr_cr);
 #endif
 	
+#else
+
+
+
+#endif
+
 	Serial.print("Settings retrieved from NvMemory\r\n");
 
 	return(0);

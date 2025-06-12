@@ -1,4 +1,5 @@
 
+#if 0
 bool neopixels_enable=true;
 uint32_t NextNeopixels=0;
 
@@ -86,4 +87,4 @@ int NeopixelCommandHandler(uint8_t *cmd,uint16_t cmdptr)
 	return(retval);
 }
 
-
+#endif

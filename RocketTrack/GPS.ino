@@ -80,6 +80,10 @@ uint8_t beaconsec;
 
 	Adafruit_GPS gps(&Wire);
 
+#elif defined(ARDUINO_RASPBERRY_PI_PICO)
+
+	Adafruit_GPS gps(&Serial);
+
 #else
 
 	Adafruit_GPS gps(&Serial1);
@@ -157,8 +161,10 @@ int SetupGPS(void)
 	Serial.println("\tSetting up GPS port for the Paxcounter with a Stemma I2C MinGps module");
 #endif
 
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
 	gps.begin(GPS_BAUD_RATE);
 	Serial1.begin(GPS_BAUD_RATE,SERIAL_8N1,UART_RXD,UART_TXD);
+#endif
 	
 #ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
 	// disable all the ubx messages, only output nmea like the other

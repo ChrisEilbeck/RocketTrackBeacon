@@ -1,4 +1,6 @@
 
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
+
 // To be included only in main(), .ino with setup() to avoid `Multiple Definitions` Linker Error
 //#include "ESP32TimerInterrupt.h"
 
@@ -41,3 +43,4 @@ int SetupTimers(void)
 
 #endif
 
+#endif

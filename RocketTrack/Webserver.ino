@@ -1,4 +1,6 @@
 
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
+
 #include "Packetisation.h"
 #include "Webserver.h"
 #include "WiFiSupport.h"
@@ -198,4 +200,6 @@ void PollWebServer(void)
 {
 	
 }
+
+#endif
 

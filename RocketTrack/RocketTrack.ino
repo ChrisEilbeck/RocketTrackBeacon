@@ -39,11 +39,11 @@
 #include "Logging.h"
 #include "LoRaModule.h"
 #include "Neopixels.h"
+#include "NvMemory.h"
 #include "SDCard.h"
 #include "SpiffsSupport.h"
 #include "Timers.h"
 #include "Webserver.h"
-#include "WiFiSupport.h"
 
 extern char crypto_key_hex[65];
 extern uint8_t crypto_key[32];
@@ -52,11 +52,21 @@ void setup()
 {
 	// Serial port(s)
 	Serial.begin(115200);
+
+	#warning "this version will hang til you connect the usb up.  do not use for anything other than dev purposes!"
+	while(!Serial)	{	delay(10);	}
 	
 	Serial.print("\n--------\tRocketTrack Flight Telemetry System\t--------\r\n\n");
 	
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
 	SPI.begin(SCK,MISO,MOSI);
-	Wire.begin(SDA,SCL);	
+	Wire.begin(SDA,SCL);
+#else
+	SPI.begin();
+	SPI1.begin();
+	Wire.begin();
+	Wire1.begin();
+#endif
 
 //	i2c_bus_scanner();
 
@@ -65,9 +75,11 @@ void setup()
 //#ifdef ARDUINO_TBEAM_USE_RADIO_SX1276
 	if(SetupPMIC())				{	Serial.println("PMIC Setup failed, halting ...\r\n");						while(1);				}
 //#endif
-	
+
+#if !defined(ARDUINO_RASPBERRY_PI_PICO)
 	if(SetupNvMemory())			{	Serial.print("Non-volatile memory read failed\r\n");												}
 	RetrieveSettings();
+#endif
 
 #if USE_OLED_DISPLAY		
 	SetupDisplay();
@@ -85,12 +97,12 @@ void setup()
 	#endif
 #endif
 
-	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, halting ...\r\n");						while(1);				}
+	if(SetupLoRa())				{	Serial.println("LoRa Setup failed, disabling ...\r\n");						lora_enable=false;		}
 	
-	if(SetupIMU())				{	Serial.print("IMU setup failed, disabling ...\r\n");						imu_enable=false;		}
+//	if(SetupIMU())				{	Serial.print("IMU setup failed, disabling ...\r\n");						imu_enable=false;		}
 	imu_enable=false;
 
-	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
+//	if(SetupBarometer())		{	Serial.println("Barometer setup failed, disabling ...");					baro_enable=0;			}
 
 	if(SetupGPS())				{	Serial.println("GPS Setup failed, halting ...\r\n");						while(1);				}
 	SetupOnePPS();
@@ -121,20 +133,20 @@ void loop()
 	PollPMIC();
 #endif
 	
-	PollIMU();	
-	PollBarometer();
-	PollGPS();
-	PollOnePPS();
+//	PollIMU();	
+//	PollBarometer();
+//	PollGPS();
+//	PollOnePPS();
 	
-	PollLoRa();
+//	PollLoRa();
 
 	PollLEDs();
 
 #if USE_OLED_DISPLAY		
-	PollDisplay();
+//	PollDisplay();
 #endif
 
-	PollScheduler();
+//	PollScheduler();
 }
 
 void PollSerial(void)
@@ -146,6 +158,7 @@ void PollSerial(void)
 	while(Serial.available())
 	{ 
 		rxbyte=Serial.read();
+		Serial.print(rxbyte);
 		
 		cmd[cmdptr++]=rxbyte;
 		
