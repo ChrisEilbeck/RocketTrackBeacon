@@ -15,9 +15,8 @@
 	#define LORA_NSS			18
 	#define LORA_RESET			14
 	#define LORA_DIO0			26
+	#define LORA_BUSY			-1
 	
-	#define SDCARD_NSS			23
-
 	#define SDA					21
 	#define SCL					22
 
