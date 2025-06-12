@@ -76,12 +76,14 @@ int SetupDisplay(void)
 	display_enable=true;
 	
 	Serial.println(F("SSD1306 display configured ..."));
-	
+
+
+#if 0	
 	display.setRotation(2);
 	
 	display.clearDisplay();
 	
-	display.setTextSize(2);					// Normal 1:1 pixel scale
+	display.setTextSize(2);
 	display.setTextColor(SSD1306_WHITE);	// Draw white text
 	display.cp437(true);					// Use full 256 char 'Code Page 437' font
 	
@@ -90,14 +92,37 @@ int SetupDisplay(void)
 	display.setCursor(40,16);
 	display.write("Track");
 	
-	
 	char buffer[32];
 	sprintf(buffer,"ID:  %03d",lora_id);
 
 	display.setCursor(24,40);
 	display.write(buffer);
+#else
+	display.setRotation(1);
 	
+	display.clearDisplay();
+	
+	display.setTextSize(2);
+	display.setTextColor(SSD1306_WHITE);	// Draw white text
+	display.cp437(true);					// Use full 256 char 'Code Page 437' font
+	
+	display.setCursor(12,8);
+	display.write("Rkt");
+	display.setCursor(12,32);
+	display.write("Trk");
+	display.setCursor(12,56);
+	display.write("Bcn");
+	
+	char buffer[32];
+	sprintf(buffer,"ID:\r\n  %03d",lora_id);
+
+	display.setCursor(0,96);
+	display.write(buffer);
+#endif
+
 	display.display();	
+
+	delay(2000);
 #endif
 
 	return(0);
