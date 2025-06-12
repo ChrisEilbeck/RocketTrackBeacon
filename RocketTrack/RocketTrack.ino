@@ -33,11 +33,11 @@
 
 #include "Barometer.h"
 #include "Beeper.h"
-#include "ConfigFile.h"
 #include "Display.h"
 #include "IMU.h"
 #include "Leds.h"
 #include "Logging.h"
+#include "LoRaModule.h"
 #include "Neopixels.h"
 #include "SDCard.h"
 #include "SpiffsSupport.h"
