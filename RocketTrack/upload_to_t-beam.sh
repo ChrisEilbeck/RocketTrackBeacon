@@ -4,7 +4,7 @@
 BOARD=esp32:esp32:t-beam
 
 PORT=/dev/ttyUSB1
-PORT=/dev/ttyACM0
+PORT=/dev/ttyACM1
 
 arduino-cli upload ${VERBOSE} --fqbn ${BOARD} --port ${PORT}
 

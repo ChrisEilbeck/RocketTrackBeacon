@@ -203,14 +203,15 @@ void PollGPS(void)
  			
 			if(strncmp(gps.lastNMEA(),"$GPRMC",6)==0)
 			{
-					beaconyear=gps.year+2000;
-					beaconmonth=gps.month;
-					beaconday=gps.day;
-					beaconhour=gps.hour;
-					beaconmin=gps.minute;
-					beaconsec=gps.seconds;
-			
-			
+				beaconyear=gps.year+2000;
+				beaconmonth=gps.month;
+				beaconday=gps.day;
+				beaconhour=gps.hour;
+				beaconmin=gps.minute;
+				beaconsec=gps.seconds;
+				
+				lastfix.gpsfix=gps.fixquality_3d;
+							
 #if (GPS_1PPS==-1)
 				ticktime_micros=micros();
 				ticktime_millis=millis();

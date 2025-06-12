@@ -14,7 +14,7 @@ fix rxfix={0,0,0,0,0,0,0,0,0,0.0,0.0,0.0,0.0,0,0,0,0};
 //
 // insert the location of Bredon Hill so that's the default reported
 // location until we receive packets from any beacon
-fix lastfix={7,3,6,13,-63,0,0,0,0,52.059956,-2.064869,500.0,1.23,3.99,0.0,1234,0};
+fix lastfix={0,0,0,0,-0,0,0,0,0,52.059956,-2.064869,500.0,0,0,0.0,0,0};
 
 void PackPacket(uint8_t *TxPacket,uint16_t *TxPacketLength)
 {

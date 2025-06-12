@@ -1,5 +1,6 @@
 
 #include "Display.h"
+#include "GPS.h"
 #include "Packetisation.h"
 
 #include <Wire.h>
